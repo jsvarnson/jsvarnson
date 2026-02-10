@@ -197,12 +197,12 @@ Public Sub ExportTableToPDF()
     startColNum = srcWs.Range(TABLE_START_COL & "1").Column
     endColNum = srcWs.Range(TABLE_END_COL & "1").Column
 
-    ' Find last row with data in the start column
-    lastRow = srcWs.Cells(srcWs.Rows.Count, startColNum).End(xlUp).Row
+    ' Find last row with data in the end column (Include column)
+    lastRow = srcWs.Cells(srcWs.Rows.Count, endColNum).End(xlUp).Row
 
     If lastRow < TABLE_START_ROW + 1 Then
         MsgBox "No data rows found in the source table." & vbCrLf & _
-               "Expected data starting at row " & TABLE_START_ROW + 1 & " in column " & TABLE_START_COL & ".", _
+               "Expected data starting at row " & TABLE_START_ROW + 1 & " in column " & TABLE_END_COL & ".", _
                vbExclamation, "Export to PDF"
         GoTo Cleanup
     End If
