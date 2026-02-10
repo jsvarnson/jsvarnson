@@ -15,7 +15,8 @@ Attribute VB_Name = "ExportToPDF"
 '
 ' USAGE:
 '   1. Place your source data in a worksheet named SOURCE_SHEET_NAME (below).
-'   2. Ensure the data is in a contiguous table starting at cell A1 with headers.
+'   2. Set TABLE_START_COL, TABLE_START_ROW, and TABLE_END_COL to define the
+'      table range. The last row is calculated automatically.
 '   3. Assign the "ExportTableToPDF" macro to a button in the workbook.
 '   4. Click the button to generate and save the PDF.
 '
@@ -31,6 +32,15 @@ Option Explicit
 
 ' The worksheet that contains the source data table
 Private Const SOURCE_SHEET_NAME As String = "Data"
+
+' Source table range definition
+' Set the start column letter, start row number, and end column letter.
+' The last row is auto-calculated from the start column.
+' Example: TABLE_START_COL="B", TABLE_START_ROW=9, TABLE_END_COL="K"
+'          produces a range like "B9:K<lastrow>"
+Private Const TABLE_START_COL As String = "B"
+Private Const TABLE_START_ROW As Long = 9
+Private Const TABLE_END_COL As String = "K"
 
 ' PDF title (first page only)
 Private Const PDF_TITLE As String = "Company Services Directory"
@@ -176,20 +186,32 @@ Public Sub ExportTableToPDF()
     Next i
 
     '--------------------------------------------------------------------------
-    ' 3. Read source data into an array
+    ' 3. Read source data into an array using the defined table range
     '--------------------------------------------------------------------------
-    Dim lastRow As Long, lastCol As Long
-    With srcWs
-        lastRow = .Cells(.Rows.Count, 1).End(xlUp).Row
-        lastCol = .Cells(1, .Columns.Count).End(xlToLeft).Column
-    End With
+    Dim lastRow As Long
+    Dim startColNum As Long
+    Dim endColNum As Long
+    Dim tableRange As Range
 
-    If lastRow < 2 Then
-        MsgBox "No data rows found in the source table.", vbExclamation, "Export to PDF"
+    ' Convert column letters to numbers
+    startColNum = srcWs.Range(TABLE_START_COL & "1").Column
+    endColNum = srcWs.Range(TABLE_END_COL & "1").Column
+
+    ' Find last row with data in the start column
+    lastRow = srcWs.Cells(srcWs.Rows.Count, startColNum).End(xlUp).Row
+
+    If lastRow < TABLE_START_ROW + 1 Then
+        MsgBox "No data rows found in the source table." & vbCrLf & _
+               "Expected data starting at row " & TABLE_START_ROW + 1 & " in column " & TABLE_START_COL & ".", _
+               vbExclamation, "Export to PDF"
         GoTo Cleanup
     End If
 
-    srcData = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol)).Value
+    ' Build range: e.g. "B9:K150"
+    Set tableRange = srcWs.Range( _
+        TABLE_START_COL & TABLE_START_ROW & ":" & TABLE_END_COL & lastRow)
+
+    srcData = tableRange.Value
 
     '--------------------------------------------------------------------------
     ' 4. Find the "Include" column index in the source data
