@@ -98,7 +98,7 @@ Private Const MIDDLE_HDR_WRAP_TEXT As Boolean = False ' Header wrap text - False
 Private Const MIDDLE_HDR_ORIENTATION As Integer = 90 ' Header text orientation (degrees) - 90
 
 ' Middle section data formatting
-Private Const MIDDLE_COL_WIDTH As Double = 6       ' Column width - 6
+Private Const MIDDLE_COL_WIDTH As Double = 7       ' Column width - 7
 Private Const MIDDLE_DATA_FONT_SIZE As Integer = 11 ' Font size - 11
 Private Const MIDDLE_WRAP_TEXT As Boolean = True   ' Wrap text - False
 Private Const MIDDLE_H_ALIGN As Long = -4108       ' Horizontal alignment (xlCenter) - -4108
@@ -115,7 +115,7 @@ Private Const RIGHT_HDR_WRAP_TEXT As Boolean = False ' Header wrap text - False
 Private Const RIGHT_HDR_ORIENTATION As Integer = 0 ' Header text orientation (degrees) - 0
 
 ' Right section data formatting
-Private Const RIGHT_COL_WIDTH As Double = 30       ' Column width - 30
+Private Const RIGHT_COL_WIDTH As Double = 40       ' Column width - 40
 Private Const RIGHT_DATA_FONT_SIZE As Integer = 11 ' Font size - 11
 Private Const RIGHT_WRAP_TEXT As Boolean = True    ' Wrap text - True
 Private Const RIGHT_H_ALIGN As Long = -4131        ' Horizontal alignment (xlLeft) - -4131
@@ -520,8 +520,8 @@ Public Sub ExportTableToPDF()
         ' Margins (inches)
         .TopMargin = Application.InchesToPoints(0.75)
         .BottomMargin = Application.InchesToPoints(0.9)
-        .LeftMargin = Application.InchesToPoints(0.4)
-        .RightMargin = Application.InchesToPoints(0.4)
+        .LeftMargin = Application.InchesToPoints(0.12)
+        .RightMargin = Application.InchesToPoints(0.12)
         .HeaderMargin = Application.InchesToPoints(0.3)
         .FooterMargin = Application.InchesToPoints(0.5)
         ' Fit all columns on one page width, let rows flow to multiple pages
