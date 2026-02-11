@@ -71,7 +71,7 @@ Private Const DESC_FONT_SIZE As Integer = 14       ' Font size for the descripti
 Private Const ALT_ROW_COLOR As Long = 15921906     ' Light gray for alternating rows - 15921906
 
 ' Left section header formatting
-Private Const LEFT_HDR_FONT_SIZE As Integer = 12   ' Header font size - 12
+Private Const LEFT_HDR_FONT_SIZE As Integer = 14   ' Header font size - 12
 Private Const LEFT_HDR_BOLD As Boolean = True       ' Header bold - True
 Private Const LEFT_HDR_FONT_COLOR As Long = 16777215 ' Header font color (white) - 16777215
 Private Const LEFT_HDR_BG_COLOR As Long = 4136713  ' Header background (#091F3F) - 4136713
@@ -94,7 +94,7 @@ Private Const MIDDLE_HDR_FONT_COLOR As Long = 16777215 ' Header font color (whit
 Private Const MIDDLE_HDR_BG_COLOR As Long = 4136713 ' Header background (#091F3F) - 4136713
 Private Const MIDDLE_HDR_H_ALIGN As Long = -4108   ' Header horizontal alignment (xlCenter) - -4108
 Private Const MIDDLE_HDR_V_ALIGN As Long = -4107   ' Header vertical alignment (xlBottom) - -4107
-Private Const MIDDLE_HDR_WRAP_TEXT As Boolean = False ' Header wrap text - False
+Private Const MIDDLE_HDR_WRAP_TEXT As Boolean = True ' Header wrap text - False
 Private Const MIDDLE_HDR_ORIENTATION As Integer = 90 ' Header text orientation (degrees) - 90
 
 ' Middle section data formatting
@@ -105,13 +105,13 @@ Private Const MIDDLE_H_ALIGN As Long = -4108       ' Horizontal alignment (xlCen
 Private Const MIDDLE_V_ALIGN As Long = -4108       ' Vertical alignment (xlCenter) - -4108
 
 ' Right section header formatting
-Private Const RIGHT_HDR_FONT_SIZE As Integer = 12  ' Header font size - 12
+Private Const RIGHT_HDR_FONT_SIZE As Integer = 14  ' Header font size - 12
 Private Const RIGHT_HDR_BOLD As Boolean = True      ' Header bold - True
 Private Const RIGHT_HDR_FONT_COLOR As Long = 16777215 ' Header font color (white) - 16777215
 Private Const RIGHT_HDR_BG_COLOR As Long = 4136713 ' Header background (#091F3F) - 4136713
 Private Const RIGHT_HDR_H_ALIGN As Long = -4108    ' Header horizontal alignment (xlCenter) - -4108
 Private Const RIGHT_HDR_V_ALIGN As Long = -4108    ' Header vertical alignment (xlCenter) - -4108
-Private Const RIGHT_HDR_WRAP_TEXT As Boolean = False ' Header wrap text - False
+Private Const RIGHT_HDR_WRAP_TEXT As Boolean = True ' Header wrap text - False
 Private Const RIGHT_HDR_ORIENTATION As Integer = 0 ' Header text orientation (degrees) - 0
 
 ' Right section data formatting
@@ -362,7 +362,7 @@ Public Sub ExportTableToPDF()
         .Font.Bold = True
         .Font.Color = RGB(0, 0, 0)
         .HorizontalAlignment = xlLeft
-        .IndentLevel = 2
+        .IndentLevel = 3
         .VerticalAlignment = xlBottom
     End With
     tmpWs.Rows(2).RowHeight = 36
@@ -373,7 +373,7 @@ Public Sub ExportTableToPDF()
         .Font.Color = RGB(80, 80, 80)
         .WrapText = True
         .HorizontalAlignment = xlLeft
-        .IndentLevel = 2
+        .IndentLevel = 3
         .VerticalAlignment = xlTop
     End With
     tmpWs.Rows(3).RowHeight = 30
