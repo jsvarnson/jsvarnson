@@ -41,11 +41,11 @@ Private Const TABLE_END_COL As String = "AL"
 Private Const PDF_TITLE As String = "Molson Coors Beverage Company"
 ' PDF description paragraph (first page only, appears below the title)
 Private Const PDF_DESCRIPTION As String = _
-    "Nutritional, Ingredient and Fermentation Source Data – Brands Sold in the U.S. Only " & _
+    "Nutritional, Ingredient and Fermentation Source Data " & Chr(150) & " Brands sold in the U.S. only." & Chr(10) & _
     "Values are average and approximate and are based on a standard regulatory serving size. " & _
     "Our products contain no Fat, Cholesterol, or High Fructose Corn Syrup. " & _
     "Where corn syrup is used as an adjunct to aid fermentation, it is consumed " & _
-    "by yeast during that process and is not present in the final product. "
+    "by yeast during that process and is not present in the final product."
 ' Default PDF output path (empty string = prompt user with Save As dialog)
 Private Const DEFAULT_PDF_PATH As String = ""
 '------------------------------------------------------------------------------
@@ -372,8 +372,8 @@ Public Sub ExportTableToPDF()
         .WrapText = True
         .VerticalAlignment = xlTop
     End With
-    tmpWs.Rows(3).RowHeight = 20
-    tmpWs.Rows(4).RowHeight = 20
+    tmpWs.Rows(3).RowHeight = 30
+    tmpWs.Rows(4).RowHeight = 30
 
     '-- Spacer row --
     tmpWs.Rows(5).RowHeight = 6
