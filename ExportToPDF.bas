@@ -107,6 +107,20 @@ Private Function GetRightColumns() As Variant
 End Function
 
 '------------------------------------------------------------------------------
+' DISPLAY NAME MAPPING
+'
+' Maps source column names to PDF output header names.
+' If a column is not listed here, its source name is used as-is.
+'------------------------------------------------------------------------------
+Private Function GetDisplayName(ByVal srcName As String) As String
+    Select Case srcName
+        Case "Product/ Brand": GetDisplayName = "Brand"
+        Case "Ingredients":    GetDisplayName = "Ingredients and Fermentations"
+        Case Else:             GetDisplayName = srcName
+    End Select
+End Function
+
+'------------------------------------------------------------------------------
 ' FORMATTING CONSTANTS
 '------------------------------------------------------------------------------
 Private Const LEFT_COL_WIDTH As Double = 18       ' Width for left columns
@@ -327,7 +341,7 @@ Public Sub ExportTableToPDF()
     '-- Write table headers --
     For j = 0 To totalOutputCols - 1
         With tmpWs.Cells(tableStartRow, j + 1)
-            .Value = allOutputCols(j)
+            .Value = GetDisplayName(CStr(allOutputCols(j)))
             .Font.Size = HEADER_FONT_SIZE
             .Font.Bold = True
             .Font.Color = RGB(255, 255, 255)
