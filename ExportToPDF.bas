@@ -63,6 +63,7 @@ Private Const DEFAULT_PDF_PATH As String = ""
 'Private Const HEADER_BG_COLOR As Long = 6697728    ' Dark teal header background (RGB: 0, 102, 102) - 6697728
 'Private Const ALT_ROW_COLOR As Long = 15921906     ' Light gray for alternating rows - 15921906
 ' General
+Private Const TITLE_TOP_SPACER As Double = 20      ' Spacer height above title to clear page header - 20
 Private Const HEADER_ROW_HEIGHT As Double = 90     ' Height for the header row (vertical text) - 90
 Private Const MIN_DATA_ROW_HEIGHT As Double = 15   ' Minimum height for data rows - 15
 Private Const TITLE_FONT_SIZE As Integer = 28      ' Font size for the title - 14
@@ -317,16 +318,17 @@ Public Sub ExportTableToPDF()
     middleCount = UBound(middleCols) - LBound(middleCols) + 1
     rightCount = UBound(rightCols) - LBound(rightCols) + 1
 
-    '-- Title (Row 1) --
-    tmpWs.Cells(1, 1).Value = PDF_TITLE
-    tmpWs.Range(tmpWs.Cells(1, 1), tmpWs.Cells(1, totalOutputCols)).Merge
+    '-- Top spacer (Row 1) - pushes title below page header --
+    '-- Title (Row 2) --
+    tmpWs.Cells(2, 1).Value = PDF_TITLE
+    tmpWs.Range(tmpWs.Cells(2, 1), tmpWs.Cells(2, totalOutputCols)).Merge
 
-    '-- Description (Rows 2-3, merged) --
-    tmpWs.Cells(2, 1).Value = PDF_DESCRIPTION
-    tmpWs.Range(tmpWs.Cells(2, 1), tmpWs.Cells(3, totalOutputCols)).Merge
+    '-- Description (Rows 3-4, merged) --
+    tmpWs.Cells(3, 1).Value = PDF_DESCRIPTION
+    tmpWs.Range(tmpWs.Cells(3, 1), tmpWs.Cells(4, totalOutputCols)).Merge
 
-    '-- Table starts at row 5 (row 4 is a spacer) --
-    tableStartRow = 5
+    '-- Table starts at row 6 (row 5 is a spacer) --
+    tableStartRow = 6
 
     '-- Write table headers --
     For j = 0 To totalOutputCols - 1
@@ -349,26 +351,29 @@ Public Sub ExportTableToPDF()
     Dim dataEndRow As Long
     dataEndRow = dataStartRow + filteredCount - 1
 
+    '-- Top spacer row --
+    tmpWs.Rows(1).RowHeight = TITLE_TOP_SPACER
+
     '-- Title formatting --
-    With tmpWs.Cells(1, 1)
+    With tmpWs.Cells(2, 1)
         .Font.Size = TITLE_FONT_SIZE
         .Font.Bold = True
         .Font.Color = RGB(0, 0, 0)
     End With
-    tmpWs.Rows(1).RowHeight = 22
+    tmpWs.Rows(2).RowHeight = 22
 
     '-- Description formatting --
-    With tmpWs.Cells(2, 1)
+    With tmpWs.Cells(3, 1)
         .Font.Size = DESC_FONT_SIZE
         .Font.Color = RGB(80, 80, 80)
         .WrapText = True
         .VerticalAlignment = xlTop
     End With
-    tmpWs.Rows(2).RowHeight = 20
     tmpWs.Rows(3).RowHeight = 20
+    tmpWs.Rows(4).RowHeight = 20
 
     '-- Spacer row --
-    tmpWs.Rows(4).RowHeight = 6
+    tmpWs.Rows(5).RowHeight = 6
 
     '-- Left section header formatting --
     For j = 1 To leftCount
@@ -528,8 +533,8 @@ Public Sub ExportTableToPDF()
     '--------------------------------------------------------------------------
     ' 10. Handle first-page-only title/description via page break
     '--------------------------------------------------------------------------
-    ' The title and description (rows 1-4) only appear because they are above
-    ' the table. Since PrintTitleRows repeats only the header row (row 5),
+    ' The title and description (rows 1-5) only appear because they are above
+    ' the table. Since PrintTitleRows repeats only the header row (row 6),
     ' subsequent pages will NOT show the title/description - they will show
     ' only the table header row and data. This achieves "title on first page only."
     '--------------------------------------------------------------------------
