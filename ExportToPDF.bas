@@ -169,6 +169,7 @@ End Function
 ' MAIN ENTRY POINT - Assign this macro to a button
 '==============================================================================
 Public Sub ExportTableToPDF()
+    Dim originalWs As Worksheet
     Dim srcWs As Worksheet
     Dim tmpWs As Worksheet
     Dim leftCols As Variant
@@ -183,6 +184,7 @@ Public Sub ExportTableToPDF()
     Dim totalOutputCols As Long
     Dim pdfPath As String
     Dim i As Long, j As Long
+    Set originalWs = ActiveSheet
     Application.ScreenUpdating = False
     Application.DisplayAlerts = False
     On Error GoTo ErrorHandler
@@ -571,6 +573,7 @@ DeleteTempSheet:
     tmpWs.Delete
     Application.DisplayAlerts = True
 Cleanup:
+    If Not originalWs Is Nothing Then originalWs.Activate
     Application.ScreenUpdating = True
     Application.DisplayAlerts = True
     Exit Sub
