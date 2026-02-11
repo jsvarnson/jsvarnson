@@ -123,17 +123,35 @@ End Function
 '------------------------------------------------------------------------------
 ' FORMATTING CONSTANTS
 '------------------------------------------------------------------------------
-Private Const LEFT_COL_WIDTH As Double = 18        ' Width for left columns - 18
-Private Const MIDDLE_COL_WIDTH As Double = 6       ' Width for vertical middle columns - 3.5
-Private Const RIGHT_COL_WIDTH As Double = 30       ' Width for right columns - 18
+' General
 Private Const HEADER_ROW_HEIGHT As Double = 90     ' Height for the header row (vertical text) - 90
 Private Const MIN_DATA_ROW_HEIGHT As Double = 15   ' Minimum height for data rows - 15
 Private Const TITLE_FONT_SIZE As Integer = 28      ' Font size for the title - 14
 Private Const DESC_FONT_SIZE As Integer = 14       ' Font size for the description - 10
 Private Const HEADER_FONT_SIZE As Integer = 12     ' Font size for table headers - 8
-Private Const DATA_FONT_SIZE As Integer = 11       ' Font size for table data - 8
 Private Const HEADER_BG_COLOR As Long = 6697728    ' Dark teal header background (RGB: 0, 102, 102) - 6697728
 Private Const ALT_ROW_COLOR As Long = 15921906     ' Light gray for alternating rows - 15921906
+
+' Left section data formatting
+Private Const LEFT_COL_WIDTH As Double = 18        ' Column width - 18
+Private Const LEFT_DATA_FONT_SIZE As Integer = 11  ' Font size - 11
+Private Const LEFT_WRAP_TEXT As Boolean = True      ' Wrap text - True
+Private Const LEFT_H_ALIGN As Long = -4131         ' Horizontal alignment (xlLeft) - -4131
+Private Const LEFT_V_ALIGN As Long = -4108         ' Vertical alignment (xlCenter) - -4108
+
+' Middle section data formatting
+Private Const MIDDLE_COL_WIDTH As Double = 6       ' Column width - 6
+Private Const MIDDLE_DATA_FONT_SIZE As Integer = 11 ' Font size - 11
+Private Const MIDDLE_WRAP_TEXT As Boolean = False   ' Wrap text - False
+Private Const MIDDLE_H_ALIGN As Long = -4108       ' Horizontal alignment (xlCenter) - -4108
+Private Const MIDDLE_V_ALIGN As Long = -4108       ' Vertical alignment (xlCenter) - -4108
+
+' Right section data formatting
+Private Const RIGHT_COL_WIDTH As Double = 30       ' Column width - 30
+Private Const RIGHT_DATA_FONT_SIZE As Integer = 11 ' Font size - 11
+Private Const RIGHT_WRAP_TEXT As Boolean = True     ' Wrap text - True
+Private Const RIGHT_H_ALIGN As Long = -4131        ' Horizontal alignment (xlLeft) - -4131
+Private Const RIGHT_V_ALIGN As Long = -4108        ' Vertical alignment (xlCenter) - -4108
 
 '==============================================================================
 ' MAIN ENTRY POINT - Assign this macro to a button
@@ -385,32 +403,39 @@ Public Sub ExportTableToPDF()
         tmpWs.Cells(tableStartRow, j).WrapText = False
     Next j
 
-    '-- Data cell formatting (font, alignment, wrap) --
-    With tmpWs.Range(tmpWs.Cells(dataStartRow, 1), tmpWs.Cells(dataEndRow, totalOutputCols))
-        .Font.Size = DATA_FONT_SIZE
-        .VerticalAlignment = xlCenter
-        .WrapText = True
-    End With
-
-    '-- Column widths and alignment --
-    ' Left columns: left-aligned, wider
+    '-- Left section data formatting --
     For j = 1 To leftCount
         tmpWs.Columns(j).ColumnWidth = LEFT_COL_WIDTH
-        tmpWs.Range(tmpWs.Cells(dataStartRow, j), tmpWs.Cells(dataEndRow, j)).HorizontalAlignment = xlLeft
+        With tmpWs.Range(tmpWs.Cells(dataStartRow, j), tmpWs.Cells(dataEndRow, j))
+            .Font.Size = LEFT_DATA_FONT_SIZE
+            .WrapText = LEFT_WRAP_TEXT
+            .HorizontalAlignment = LEFT_H_ALIGN
+            .VerticalAlignment = LEFT_V_ALIGN
+        End With
     Next j
 
-    ' Middle columns: center-aligned, narrow
+    '-- Middle section data formatting --
     For j = middleStartCol To middleStartCol + middleCount - 1
         tmpWs.Columns(j).ColumnWidth = MIDDLE_COL_WIDTH
-        tmpWs.Range(tmpWs.Cells(dataStartRow, j), tmpWs.Cells(dataEndRow, j)).HorizontalAlignment = xlCenter
+        With tmpWs.Range(tmpWs.Cells(dataStartRow, j), tmpWs.Cells(dataEndRow, j))
+            .Font.Size = MIDDLE_DATA_FONT_SIZE
+            .WrapText = MIDDLE_WRAP_TEXT
+            .HorizontalAlignment = MIDDLE_H_ALIGN
+            .VerticalAlignment = MIDDLE_V_ALIGN
+        End With
     Next j
 
-    ' Right columns: left-aligned, wider
+    '-- Right section data formatting --
     Dim rightStartCol As Long
     rightStartCol = leftCount + middleCount + 1
     For j = rightStartCol To rightStartCol + rightCount - 1
         tmpWs.Columns(j).ColumnWidth = RIGHT_COL_WIDTH
-        tmpWs.Range(tmpWs.Cells(dataStartRow, j), tmpWs.Cells(dataEndRow, j)).HorizontalAlignment = xlLeft
+        With tmpWs.Range(tmpWs.Cells(dataStartRow, j), tmpWs.Cells(dataEndRow, j))
+            .Font.Size = RIGHT_DATA_FONT_SIZE
+            .WrapText = RIGHT_WRAP_TEXT
+            .HorizontalAlignment = RIGHT_H_ALIGN
+            .VerticalAlignment = RIGHT_V_ALIGN
+        End With
     Next j
 
     '-- Auto-fit data row heights (must run after fonts, wrap, and widths are set) --
