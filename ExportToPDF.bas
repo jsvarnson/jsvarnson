@@ -1,4 +1,4 @@
-Attribute VB_Name = "ExportToPDF"
+'Attribute VB_Name = "ExportToPDF"
 '==============================================================================
 ' ExportToPDF - VBA Macro for Excel-to-PDF Table Export
 '==============================================================================
@@ -23,106 +23,45 @@ Attribute VB_Name = "ExportToPDF"
 ' CUSTOMIZATION:
 '   - Edit the constants and column arrays below to match your data.
 '==============================================================================
-
-Option Explicit
-
+'Option Explicit
 '------------------------------------------------------------------------------
 ' CONFIGURATION - Edit these values to match your workbook
 '------------------------------------------------------------------------------
-
 ' The worksheet that contains the source data table
-Private Const SOURCE_SHEET_NAME As String = "Data"
-
+Private Const SOURCE_SHEET_NAME As String = "US"
 ' Source table range definition
 ' Set the start column letter, start row number, and end column letter.
 ' The last row is auto-calculated from the start column.
 ' Example: TABLE_START_COL="B", TABLE_START_ROW=9, TABLE_END_COL="K"
 '          produces a range like "B9:K<lastrow>"
-Private Const TABLE_START_COL As String = "B"
+Private Const TABLE_START_COL As String = "A"
 Private Const TABLE_START_ROW As Long = 9
-Private Const TABLE_END_COL As String = "K"
-
+Private Const TABLE_END_COL As String = "AL"
 ' PDF title (first page only)
-Private Const PDF_TITLE As String = "Company Services Directory"
-
+Private Const PDF_TITLE As String = "Molson Coors Beverage Company"
 ' PDF description paragraph (first page only, appears below the title)
 Private Const PDF_DESCRIPTION As String = _
-    "This document provides a comprehensive listing of companies and the " & _
-    "services they offer. Only companies marked for inclusion are listed. " & _
-    "For the most current information, please refer to the updated date above."
-
+    "Nutritional, Ingredient and Fermentation Source Data – Brands Sold in the U.S. Only " & _
+    "Values are average and approximate and are based on a standard regulatory serving size. " & _
+    "Our products contain no Fat, Cholesterol, or High Fructose Corn Syrup. " & _
+    "Where corn syrup is used as an adjunct to aid fermentation, it is consumed " & _
+    "by yeast during that process and is not present in the final product. "
 ' Default PDF output path (empty string = prompt user with Save As dialog)
 Private Const DEFAULT_PDF_PATH As String = ""
-
-'------------------------------------------------------------------------------
-' COLUMN DEFINITIONS
-'
-' These arrays define which source columns appear in the PDF and their order.
-' Column names MUST exactly match the header text in your source data table.
-'
-' - LEFT_COLS:   displayed with normal horizontal text, wider columns (left side)
-' - MIDDLE_COLS: displayed with vertically-rotated text, narrow columns (center)
-' - RIGHT_COLS:  displayed with normal horizontal text, wider columns (right side)
-'------------------------------------------------------------------------------
-
-Private Function GetLeftColumns() As Variant
-    GetLeftColumns = Array( _
-        "Company Name", _
-        "DBA Name", _
-        "City", _
-        "St" _
-    )
-End Function
-
-Private Function GetMiddleColumns() As Variant
-    GetMiddleColumns = Array( _
-        "Comm'l P&C", _
-        "Personal Lines", _
-        "Group Benefits", _
-        "Individual Benefits", _
-        "Life/Annuities", _
-        "Bonds/Surety", _
-        "Risk Mgmt", _
-        "Loss Control", _
-        "Claims Assist", _
-        "TPA", _
-        "HR Consulting", _
-        "Payroll Services", _
-        "Retirement Plans", _
-        "Executive Benefits", _
-        "Financial Planning", _
-        "Voluntary Benefits", _
-        "Medicare Suppl", _
-        "Pet Insurance", _
-        "Wellness Programs" _
-    )
-End Function
-
-Private Function GetRightColumns() As Variant
-    GetRightColumns = Array( _
-        "Contact Name", _
-        "Phone Number", _
-        "Website" _
-    )
-End Function
-
-'------------------------------------------------------------------------------
-' DISPLAY NAME MAPPING
-'
-' Maps source column names to PDF output header names.
-' If a column is not listed here, its source name is used as-is.
-'------------------------------------------------------------------------------
-Private Function GetDisplayName(ByVal srcName As String) As String
-    Select Case srcName
-        Case "Product/ Brand": GetDisplayName = "Brand"
-        Case "Ingredients":    GetDisplayName = "Ingredients and Fermentations"
-        Case Else:             GetDisplayName = srcName
-    End Select
-End Function
-
 '------------------------------------------------------------------------------
 ' FORMATTING CONSTANTS
 '------------------------------------------------------------------------------
+'Private Const LEFT_COL_WIDTH As Double = 18        ' Width for left columns - 18
+'Private Const MIDDLE_COL_WIDTH As Double = 6       ' Width for vertical middle columns - 3.5
+'Private Const RIGHT_COL_WIDTH As Double = 30       ' Width for right columns - 18
+'Private Const HEADER_ROW_HEIGHT As Double = 90     ' Height for the header row (vertical text) - 90
+'Private Const MIN_DATA_ROW_HEIGHT As Double = 15   ' Minimum height for data rows - 15
+'Private Const TITLE_FONT_SIZE As Integer = 28      ' Font size for the title - 14
+'Private Const DESC_FONT_SIZE As Integer = 14       ' Font size for the description - 10
+'Private Const HEADER_FONT_SIZE As Integer = 12     ' Font size for table headers - 8
+'Private Const DATA_FONT_SIZE As Integer = 11       ' Font size for table data - 8
+'Private Const HEADER_BG_COLOR As Long = 6697728    ' Dark teal header background (RGB: 0, 102, 102) - 6697728
+'Private Const ALT_ROW_COLOR As Long = 15921906     ' Light gray for alternating rows - 15921906
 ' General
 Private Const HEADER_ROW_HEIGHT As Double = 90     ' Height for the header row (vertical text) - 90
 Private Const MIN_DATA_ROW_HEIGHT As Double = 15   ' Minimum height for data rows - 15
@@ -143,7 +82,7 @@ Private Const LEFT_HDR_ORIENTATION As Integer = 0  ' Header text orientation (de
 ' Left section data formatting
 Private Const LEFT_COL_WIDTH As Double = 18        ' Column width - 18
 Private Const LEFT_DATA_FONT_SIZE As Integer = 11  ' Font size - 11
-Private Const LEFT_WRAP_TEXT As Boolean = True      ' Wrap text - True
+Private Const LEFT_WRAP_TEXT As Boolean = True     ' Wrap text - True
 Private Const LEFT_H_ALIGN As Long = -4131         ' Horizontal alignment (xlLeft) - -4131
 Private Const LEFT_V_ALIGN As Long = -4108         ' Vertical alignment (xlCenter) - -4108
 
@@ -160,7 +99,7 @@ Private Const MIDDLE_HDR_ORIENTATION As Integer = 90 ' Header text orientation (
 ' Middle section data formatting
 Private Const MIDDLE_COL_WIDTH As Double = 6       ' Column width - 6
 Private Const MIDDLE_DATA_FONT_SIZE As Integer = 11 ' Font size - 11
-Private Const MIDDLE_WRAP_TEXT As Boolean = False   ' Wrap text - False
+Private Const MIDDLE_WRAP_TEXT As Boolean = True   ' Wrap text - False
 Private Const MIDDLE_H_ALIGN As Long = -4108       ' Horizontal alignment (xlCenter) - -4108
 Private Const MIDDLE_V_ALIGN As Long = -4108       ' Vertical alignment (xlCenter) - -4108
 
@@ -177,15 +116,58 @@ Private Const RIGHT_HDR_ORIENTATION As Integer = 0 ' Header text orientation (de
 ' Right section data formatting
 Private Const RIGHT_COL_WIDTH As Double = 30       ' Column width - 30
 Private Const RIGHT_DATA_FONT_SIZE As Integer = 11 ' Font size - 11
-Private Const RIGHT_WRAP_TEXT As Boolean = True     ' Wrap text - True
+Private Const RIGHT_WRAP_TEXT As Boolean = True    ' Wrap text - True
 Private Const RIGHT_H_ALIGN As Long = -4131        ' Horizontal alignment (xlLeft) - -4131
 Private Const RIGHT_V_ALIGN As Long = -4108        ' Vertical alignment (xlCenter) - -4108
-
+'------------------------------------------------------------------------------
+' COLUMN DEFINITIONS
+'
+' These arrays define which source columns appear in the PDF and their order.
+' Column names MUST exactly match the header text in your source data table.
+'
+' - LEFT_COLS:   displayed with normal horizontal text, wider columns (left side)
+' - MIDDLE_COLS: displayed with vertically-rotated text, narrow columns (center)
+' - RIGHT_COLS:  displayed with normal horizontal text, wider columns (right side)
+'------------------------------------------------------------------------------
+Private Function GetLeftColumns() As Variant
+    GetLeftColumns = Array( _
+        "Product/ Brand", _
+        "Brand Style" _
+    )
+End Function
+Private Function GetMiddleColumns() As Variant
+    GetMiddleColumns = Array( _
+        "Serving Size", _
+        "ABV", _
+        "Total Calories", _
+        "Total Fat (g)", _
+        "Calories from Fat", _
+        "Saturated Fat (g)", _
+        "Trans Fat (g)", _
+        "Cholesterol (mg)", _
+        "Sodium (mg)", _
+        "Total Carbohydrates (g)", _
+        "Dietary Fiber (g)", _
+        "Total Sugars (g)", _
+        "Protein (g)" _
+    )
+End Function
+Private Function GetRightColumns() As Variant
+    GetRightColumns = Array( _
+        "Ingredients" _
+    )
+End Function
+Private Function GetDisplayName(ByVal srcName As String) As String
+    Select Case srcName
+        Case "Product/ Brand": GetDisplayName = "Brand"
+        Case "Ingredients":    GetDisplayName = "Ingredients and Fermentations Sources"
+        Case Else:             GetDisplayName = srcName
+    End Select
+End Function
 '==============================================================================
 ' MAIN ENTRY POINT - Assign this macro to a button
 '==============================================================================
 Public Sub ExportTableToPDF()
-
     Dim srcWs As Worksheet
     Dim tmpWs As Worksheet
     Dim leftCols As Variant
@@ -200,12 +182,9 @@ Public Sub ExportTableToPDF()
     Dim totalOutputCols As Long
     Dim pdfPath As String
     Dim i As Long, j As Long
-
     Application.ScreenUpdating = False
     Application.DisplayAlerts = False
-
     On Error GoTo ErrorHandler
-
     '--------------------------------------------------------------------------
     ' 1. Validate source worksheet exists
     '--------------------------------------------------------------------------
@@ -213,25 +192,21 @@ Public Sub ExportTableToPDF()
     On Error Resume Next
     Set srcWs = ThisWorkbook.Worksheets(SOURCE_SHEET_NAME)
     On Error GoTo ErrorHandler
-
     If srcWs Is Nothing Then
         MsgBox "Source worksheet '" & SOURCE_SHEET_NAME & "' not found." & vbCrLf & _
                "Please ensure your data is on a sheet named '" & SOURCE_SHEET_NAME & "'.", _
                vbExclamation, "Export to PDF"
         GoTo Cleanup
     End If
-
     '--------------------------------------------------------------------------
     ' 2. Load column definitions
     '--------------------------------------------------------------------------
     leftCols = GetLeftColumns()
     middleCols = GetMiddleColumns()
     rightCols = GetRightColumns()
-
     totalOutputCols = (UBound(leftCols) - LBound(leftCols) + 1) + _
                       (UBound(middleCols) - LBound(middleCols) + 1) + _
                       (UBound(rightCols) - LBound(rightCols) + 1)
-
     ' Build a combined array of all output column names (in order)
     ReDim allOutputCols(0 To totalOutputCols - 1)
     Dim idx As Long: idx = 0
@@ -244,7 +219,6 @@ Public Sub ExportTableToPDF()
     For i = LBound(rightCols) To UBound(rightCols)
         allOutputCols(idx) = rightCols(i): idx = idx + 1
     Next i
-
     '--------------------------------------------------------------------------
     ' 3. Read source data into an array using the defined table range
     '--------------------------------------------------------------------------
@@ -252,13 +226,11 @@ Public Sub ExportTableToPDF()
     Dim startColNum As Long
     Dim endColNum As Long
     Dim tableRange As Range
-
     ' Convert column letters to numbers
     startColNum = srcWs.Range(TABLE_START_COL & "1").Column
     endColNum = srcWs.Range(TABLE_END_COL & "1").Column
-
     ' Find last row with data in the end column (Include column)
-    lastRow = srcWs.Cells(srcWs.Rows.Count, endColNum).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.Count, endColNum).End(xlUp).row
 
     If lastRow < TABLE_START_ROW + 1 Then
         MsgBox "No data rows found in the source table." & vbCrLf & _
@@ -266,13 +238,10 @@ Public Sub ExportTableToPDF()
                vbExclamation, "Export to PDF"
         GoTo Cleanup
     End If
-
     ' Build range: e.g. "B9:K150"
     Set tableRange = srcWs.Range( _
         TABLE_START_COL & TABLE_START_ROW & ":" & TABLE_END_COL & lastRow)
-
     srcData = tableRange.Value
-
     '--------------------------------------------------------------------------
     ' 4. Find the "Include" column index in the source data
     '--------------------------------------------------------------------------
@@ -283,21 +252,18 @@ Public Sub ExportTableToPDF()
             Exit For
         End If
     Next j
-
     If includeColIdx = 0 Then
         MsgBox "Could not find an 'Include' column in the source data headers." & vbCrLf & _
                "Please ensure there is a column named 'Include'.", _
                vbExclamation, "Export to PDF"
         GoTo Cleanup
     End If
-
     '--------------------------------------------------------------------------
     ' 5. Map output column names to source column indices
     '--------------------------------------------------------------------------
     ReDim colMap(0 To totalOutputCols - 1)
     Dim colName As String
     Dim found As Boolean
-
     For i = 0 To totalOutputCols - 1
         colName = UCase(Trim(CStr(allOutputCols(i))))
         found = False
@@ -315,7 +281,6 @@ Public Sub ExportTableToPDF()
             GoTo Cleanup
         End If
     Next i
-
     '--------------------------------------------------------------------------
     ' 6. Filter rows where Include = "Yes"
     '--------------------------------------------------------------------------
@@ -326,12 +291,10 @@ Public Sub ExportTableToPDF()
             filteredCount = filteredCount + 1
         End If
     Next i
-
     If filteredCount = 0 Then
         MsgBox "No rows with Include = 'Yes' were found.", vbInformation, "Export to PDF"
         GoTo Cleanup
     End If
-
     ' Second pass: extract matching data
     ReDim filteredData(1 To filteredCount, 1 To totalOutputCols)
     Dim row As Long: row = 0
@@ -343,8 +306,6 @@ Public Sub ExportTableToPDF()
             Next j
         End If
     Next i
-
-    '--------------------------------------------------------------------------
     ' 7. Create temporary worksheet and write all table data
     '--------------------------------------------------------------------------
     Set tmpWs = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
@@ -457,7 +418,7 @@ Public Sub ExportTableToPDF()
 
     tmpWs.Rows(tableStartRow).RowHeight = HEADER_ROW_HEIGHT
 
-    '-- Left section data formatting --
+   '-- Left section data formatting --
     For j = 1 To leftCount
         tmpWs.Columns(j).ColumnWidth = LEFT_COL_WIDTH
         With tmpWs.Range(tmpWs.Cells(dataStartRow, j), tmpWs.Cells(dataEndRow, j))
@@ -527,31 +488,27 @@ Public Sub ExportTableToPDF()
         .Borders(xlInsideHorizontal).Color = RGB(180, 180, 180)
     End With
 
-    '-- Thicker border below header row --
+    ' Thicker border below header row
     With tmpWs.Range(tmpWs.Cells(tableStartRow, 1), tmpWs.Cells(tableStartRow, totalOutputCols))
         .Borders(xlEdgeBottom).LineStyle = xlContinuous
         .Borders(xlEdgeBottom).Weight = xlMedium
         .Borders(xlEdgeBottom).Color = RGB(0, 0, 0)
     End With
-
     '--------------------------------------------------------------------------
     ' 9. Page setup: landscape, headers, margins, print area
     '--------------------------------------------------------------------------
     With tmpWs.PageSetup
         .Orientation = xlLandscape
         .PaperSize = xlPaperLetter
-
         ' "Updated: MM/dd/YYYY" in top-right of every page
         .RightHeader = "Updated: " & Format(Date, "MM/dd/YYYY")
         .RightHeaderPicture.Filename = ""  ' no picture
-
         ' Clear other header/footer sections
         .LeftHeader = ""
         .CenterHeader = ""
         .LeftFooter = ""
         .CenterFooter = "Page &P of &N"
         .RightFooter = ""
-
         ' Margins (inches)
         .TopMargin = Application.InchesToPoints(0.75)
         .BottomMargin = Application.InchesToPoints(0.5)
@@ -559,19 +516,15 @@ Public Sub ExportTableToPDF()
         .RightMargin = Application.InchesToPoints(0.4)
         .HeaderMargin = Application.InchesToPoints(0.3)
         .FooterMargin = Application.InchesToPoints(0.3)
-
         ' Fit all columns on one page width, let rows flow to multiple pages
         .Zoom = False
         .FitToPagesWide = 1
         .FitToPagesTall = False
-
         ' Print title rows: repeat the table header row on every page
         .PrintTitleRows = "$" & tableStartRow & ":$" & tableStartRow
-
         ' Set the print area
         .PrintArea = tmpWs.Range(tmpWs.Cells(1, 1), tmpWs.Cells(dataEndRow, totalOutputCols)).Address
     End With
-
     '--------------------------------------------------------------------------
     ' 10. Handle first-page-only title/description via page break
     '--------------------------------------------------------------------------
@@ -579,7 +532,6 @@ Public Sub ExportTableToPDF()
     ' the table. Since PrintTitleRows repeats only the header row (row 5),
     ' subsequent pages will NOT show the title/description - they will show
     ' only the table header row and data. This achieves "title on first page only."
-
     '--------------------------------------------------------------------------
     ' 11. Prompt for save location and export to PDF
     '--------------------------------------------------------------------------
@@ -592,12 +544,10 @@ Public Sub ExportTableToPDF()
             FileFilter:="PDF Files (*.pdf), *.pdf", _
             Title:="Save PDF Export As")
     End If
-
     If pdfPath = "False" Or pdfPath = "" Then
         MsgBox "Export cancelled.", vbInformation, "Export to PDF"
         GoTo DeleteTempSheet
     End If
-
     ' Export
     tmpWs.ExportAsFixedFormat _
         Type:=xlTypePDF, _
@@ -606,10 +556,8 @@ Public Sub ExportTableToPDF()
         IncludeDocProperties:=True, _
         IgnorePrintAreas:=False, _
         OpenAfterPublish:=True
-
     MsgBox "PDF exported successfully!" & vbCrLf & vbCrLf & pdfPath, _
            vbInformation, "Export to PDF"
-
 DeleteTempSheet:
     '--------------------------------------------------------------------------
     ' 12. Clean up - delete the temporary worksheet
@@ -617,17 +565,14 @@ DeleteTempSheet:
     Application.DisplayAlerts = False
     tmpWs.Delete
     Application.DisplayAlerts = True
-
 Cleanup:
     Application.ScreenUpdating = True
     Application.DisplayAlerts = True
     Exit Sub
-
 ErrorHandler:
     MsgBox "An error occurred during PDF export:" & vbCrLf & vbCrLf & _
            "Error " & Err.Number & ": " & Err.Description, _
            vbCritical, "Export to PDF"
-
     ' Attempt to clean up the temp sheet if it was created
     If Not tmpWs Is Nothing Then
         Application.DisplayAlerts = False
@@ -636,7 +581,5 @@ ErrorHandler:
         On Error GoTo 0
         Application.DisplayAlerts = True
     End If
-
     Resume Cleanup
-
 End Sub
