@@ -83,6 +83,7 @@ Private Const MIDDLE_HDR_H_ALIGN As Long = -4108   ' Header horizontal alignment
 Private Const MIDDLE_HDR_V_ALIGN As Long = -4107   ' Header vertical alignment (xlBottom) - -4107
 Private Const MIDDLE_HDR_WRAP_TEXT As Boolean = True ' Header wrap text - False
 Private Const MIDDLE_HDR_ORIENTATION As Integer = 90 ' Header text orientation (degrees) - 90
+Private Const MIDDLE_HDR_INDENT As Integer = 2        ' Header indent level (vertical offset) - 2
 ' Middle section data formatting
 Private Const MIDDLE_COL_WIDTH As Double = 7.5       ' Column width - 7
 Private Const MIDDLE_DATA_FONT_SIZE As Integer = 11 ' Font size - 11
@@ -378,6 +379,7 @@ Public Sub ExportTableToPDF()
             .VerticalAlignment = MIDDLE_HDR_V_ALIGN
             .WrapText = MIDDLE_HDR_WRAP_TEXT
             .Orientation = MIDDLE_HDR_ORIENTATION
+            .IndentLevel = MIDDLE_HDR_INDENT
         End With
     Next j
     '-- Right section header formatting --
