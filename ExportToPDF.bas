@@ -41,52 +41,39 @@ Private Const TABLE_END_COL As String = "AL"
 Private Const PDF_TITLE As String = "Molson Coors Beverage Company"
 ' PDF description paragraph (first page only, appears below the title)
 Private Const PDF_DESCRIPTION As String = _
-    "Nutritional, Ingredient and Fermentation Source Data – Brands sold in the U.S. only." & vbLf & _
-    "Values are average and approximate and are based on a standard regulatory serving size. " & _
-    "Our products contain no Fat, Cholesterol, or High Fructose Corn Syrup. " & _
-    "Where corn syrup is used as an adjunct to aid fermentation, it is consumed " & _
-    "by yeast during that process and is not present in the final product."
+    "Nutritional, Ingredient and Fermentation Source Data – Brands sold in the U.S. only. Values are " & _
+    "average and approximate and are based " & vbLf & _
+    "on a standard regulatory serving size. Our products contain no Fat, Cholesterol, " & _
+    "or High Fructose Corn Syrup. Where corn syrup is used " & vbLf & _
+    "as an adjunct to aid fermentation, " & _
+    "it is consumed by yeast during that process and is not present in the final product."
 ' Default PDF output path (empty string = prompt user with Save As dialog)
 Private Const DEFAULT_PDF_PATH As String = ""
 '------------------------------------------------------------------------------
 ' FORMATTING CONSTANTS
 '------------------------------------------------------------------------------
-'Private Const LEFT_COL_WIDTH As Double = 18        ' Width for left columns - 18
-'Private Const MIDDLE_COL_WIDTH As Double = 6       ' Width for vertical middle columns - 3.5
-'Private Const RIGHT_COL_WIDTH As Double = 30       ' Width for right columns - 18
-'Private Const HEADER_ROW_HEIGHT As Double = 90     ' Height for the header row (vertical text) - 90
-'Private Const MIN_DATA_ROW_HEIGHT As Double = 20   ' Minimum height for data rows - 15
-'Private Const TITLE_FONT_SIZE As Integer = 28      ' Font size for the title - 14
-'Private Const DESC_FONT_SIZE As Integer = 14       ' Font size for the description - 10
-'Private Const HEADER_FONT_SIZE As Integer = 12     ' Font size for table headers - 8
-'Private Const DATA_FONT_SIZE As Integer = 11       ' Font size for table data - 8
-'Private Const HEADER_BG_COLOR As Long = 6697728    ' Dark teal header background (RGB: 0, 102, 102) - 6697728
-'Private Const ALT_ROW_COLOR As Long = 15921906     ' Light gray for alternating rows - 15921906
 ' General
 Private Const TITLE_TOP_SPACER As Double = 20      ' Spacer height above title to clear page header - 20
-Private Const HEADER_ROW_HEIGHT As Double = 90     ' Height for the header row (vertical text) - 90
-Private Const MIN_DATA_ROW_HEIGHT As Double = 20   ' Minimum height for data rows - 15
+Private Const HEADER_ROW_HEIGHT As Double = 105    ' Height for the header row (vertical text) - 90
+Private Const MIN_DATA_ROW_HEIGHT As Double = 48   ' Minimum height for data rows - 15
 Private Const TITLE_FONT_SIZE As Integer = 28      ' Font size for the title - 14
 Private Const DESC_FONT_SIZE As Integer = 14       ' Font size for the description - 10
 Private Const ALT_ROW_COLOR As Long = 15921906     ' Light gray for alternating rows - 15921906
-
 ' Left section header formatting
-Private Const LEFT_HDR_FONT_SIZE As Integer = 14   ' Header font size - 12
-Private Const LEFT_HDR_BOLD As Boolean = True       ' Header bold - True
+Private Const LEFT_HDR_FONT_SIZE As Integer = 16   ' Header font size - 12
+Private Const LEFT_HDR_BOLD As Boolean = True      ' Header bold - True
 Private Const LEFT_HDR_FONT_COLOR As Long = 16777215 ' Header font color (white) - 16777215
 Private Const LEFT_HDR_BG_COLOR As Long = 4136713  ' Header background (#091F3F) - 4136713
 Private Const LEFT_HDR_H_ALIGN As Long = -4108     ' Header horizontal alignment (xlCenter) - -4108
 Private Const LEFT_HDR_V_ALIGN As Long = -4108     ' Header vertical alignment (xlCenter) - -4108
 Private Const LEFT_HDR_WRAP_TEXT As Boolean = False ' Header wrap text - False
 Private Const LEFT_HDR_ORIENTATION As Integer = 0  ' Header text orientation (degrees) - 0
-
 ' Left section data formatting
 Private Const LEFT_COL_WIDTH As Double = 18        ' Column width - 18
 Private Const LEFT_DATA_FONT_SIZE As Integer = 11  ' Font size - 11
 Private Const LEFT_WRAP_TEXT As Boolean = True     ' Wrap text - True
 Private Const LEFT_H_ALIGN As Long = -4131         ' Horizontal alignment (xlLeft) - -4131
 Private Const LEFT_V_ALIGN As Long = -4108         ' Vertical alignment (xlCenter) - -4108
-
 ' Middle section header formatting
 Private Const MIDDLE_HDR_FONT_SIZE As Integer = 12 ' Header font size - 12
 Private Const MIDDLE_HDR_BOLD As Boolean = True     ' Header bold - True
@@ -96,16 +83,14 @@ Private Const MIDDLE_HDR_H_ALIGN As Long = -4108   ' Header horizontal alignment
 Private Const MIDDLE_HDR_V_ALIGN As Long = -4107   ' Header vertical alignment (xlBottom) - -4107
 Private Const MIDDLE_HDR_WRAP_TEXT As Boolean = True ' Header wrap text - False
 Private Const MIDDLE_HDR_ORIENTATION As Integer = 90 ' Header text orientation (degrees) - 90
-
 ' Middle section data formatting
-Private Const MIDDLE_COL_WIDTH As Double = 7       ' Column width - 7
+Private Const MIDDLE_COL_WIDTH As Double = 7.5       ' Column width - 7
 Private Const MIDDLE_DATA_FONT_SIZE As Integer = 11 ' Font size - 11
 Private Const MIDDLE_WRAP_TEXT As Boolean = True   ' Wrap text - False
 Private Const MIDDLE_H_ALIGN As Long = -4108       ' Horizontal alignment (xlCenter) - -4108
 Private Const MIDDLE_V_ALIGN As Long = -4108       ' Vertical alignment (xlCenter) - -4108
-
 ' Right section header formatting
-Private Const RIGHT_HDR_FONT_SIZE As Integer = 14  ' Header font size - 12
+Private Const RIGHT_HDR_FONT_SIZE As Integer = 16  ' Header font size - 12
 Private Const RIGHT_HDR_BOLD As Boolean = True      ' Header bold - True
 Private Const RIGHT_HDR_FONT_COLOR As Long = 16777215 ' Header font color (white) - 16777215
 Private Const RIGHT_HDR_BG_COLOR As Long = 4136713 ' Header background (#091F3F) - 4136713
@@ -113,9 +98,8 @@ Private Const RIGHT_HDR_H_ALIGN As Long = -4108    ' Header horizontal alignment
 Private Const RIGHT_HDR_V_ALIGN As Long = -4108    ' Header vertical alignment (xlCenter) - -4108
 Private Const RIGHT_HDR_WRAP_TEXT As Boolean = True ' Header wrap text - False
 Private Const RIGHT_HDR_ORIENTATION As Integer = 0 ' Header text orientation (degrees) - 0
-
 ' Right section data formatting
-Private Const RIGHT_COL_WIDTH As Double = 40       ' Column width - 40
+Private Const RIGHT_COL_WIDTH As Double = 45       ' Column width - 40
 Private Const RIGHT_DATA_FONT_SIZE As Integer = 11 ' Font size - 11
 Private Const RIGHT_WRAP_TEXT As Boolean = True    ' Wrap text - True
 Private Const RIGHT_H_ALIGN As Long = -4131        ' Horizontal alignment (xlLeft) - -4131
@@ -234,7 +218,6 @@ Public Sub ExportTableToPDF()
     endColNum = srcWs.Range(TABLE_END_COL & "1").Column
     ' Find last row with data in the end column (Include column)
     lastRow = srcWs.Cells(srcWs.Rows.Count, endColNum).End(xlUp).row
-
     If lastRow < TABLE_START_ROW + 1 Then
         MsgBox "No data rows found in the source table." & vbCrLf & _
                "Expected data starting at row " & TABLE_START_ROW + 1 & " in column " & TABLE_END_COL & ".", _
@@ -313,49 +296,39 @@ Public Sub ExportTableToPDF()
     '--------------------------------------------------------------------------
     Set tmpWs = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
     tmpWs.Name = "PDF_Export_Temp_" & Format(Now, "hhmmss")
-
     Dim tableStartRow As Long
     Dim leftCount As Long, middleCount As Long, rightCount As Long
     leftCount = UBound(leftCols) - LBound(leftCols) + 1
     middleCount = UBound(middleCols) - LBound(middleCols) + 1
     rightCount = UBound(rightCols) - LBound(rightCols) + 1
-
     '-- Top spacer (Row 1) - pushes title below page header --
     '-- Title (Row 2) --
     tmpWs.Cells(2, 1).Value = PDF_TITLE
     tmpWs.Range(tmpWs.Cells(2, 1), tmpWs.Cells(2, totalOutputCols)).Merge
-
     '-- Description (Rows 3-4, merged) --
     tmpWs.Cells(3, 1).Value = PDF_DESCRIPTION
     tmpWs.Range(tmpWs.Cells(3, 1), tmpWs.Cells(4, totalOutputCols)).Merge
-
     '-- Table starts at row 6 (row 5 is a spacer) --
     tableStartRow = 6
-
     '-- Write table headers --
     For j = 0 To totalOutputCols - 1
         tmpWs.Cells(tableStartRow, j + 1).Value = GetDisplayName(CStr(allOutputCols(j)))
     Next j
-
     '-- Write filtered data rows --
     Dim dataStartRow As Long
     dataStartRow = tableStartRow + 1
-
     For i = 1 To filteredCount
         For j = 1 To totalOutputCols
             tmpWs.Cells(dataStartRow + i - 1, j).Value = filteredData(i, j)
         Next j
     Next i
-
     '--------------------------------------------------------------------------
     ' 8. Apply all formatting
     '--------------------------------------------------------------------------
     Dim dataEndRow As Long
     dataEndRow = dataStartRow + filteredCount - 1
-
     '-- Top spacer row --
     tmpWs.Rows(1).RowHeight = TITLE_TOP_SPACER
-
     '-- Title formatting --
     With tmpWs.Cells(2, 1)
         .Font.Size = TITLE_FONT_SIZE
@@ -366,7 +339,6 @@ Public Sub ExportTableToPDF()
         .VerticalAlignment = xlBottom
     End With
     tmpWs.Rows(2).RowHeight = 36
-
     '-- Description formatting --
     With tmpWs.Cells(3, 1)
         .Font.Size = DESC_FONT_SIZE
@@ -378,10 +350,8 @@ Public Sub ExportTableToPDF()
     End With
     tmpWs.Rows(3).RowHeight = 30
     tmpWs.Rows(4).RowHeight = 30
-
     '-- Spacer row --
     tmpWs.Rows(5).RowHeight = 6
-
     '-- Left section header formatting --
     For j = 1 To leftCount
         With tmpWs.Cells(tableStartRow, j)
@@ -395,7 +365,6 @@ Public Sub ExportTableToPDF()
             .Orientation = LEFT_HDR_ORIENTATION
         End With
     Next j
-
     '-- Middle section header formatting --
     Dim middleStartCol As Long
     middleStartCol = leftCount + 1
@@ -411,7 +380,6 @@ Public Sub ExportTableToPDF()
             .Orientation = MIDDLE_HDR_ORIENTATION
         End With
     Next j
-
     '-- Right section header formatting --
     Dim rightHdrStartCol As Long
     rightHdrStartCol = leftCount + middleCount + 1
@@ -427,9 +395,7 @@ Public Sub ExportTableToPDF()
             .Orientation = RIGHT_HDR_ORIENTATION
         End With
     Next j
-
     tmpWs.Rows(tableStartRow).RowHeight = HEADER_ROW_HEIGHT
-
    '-- Left section data formatting --
     For j = 1 To leftCount
         tmpWs.Columns(j).ColumnWidth = LEFT_COL_WIDTH
@@ -440,7 +406,6 @@ Public Sub ExportTableToPDF()
             .VerticalAlignment = LEFT_V_ALIGN
         End With
     Next j
-
     '-- Middle section data formatting --
     For j = middleStartCol To middleStartCol + middleCount - 1
         tmpWs.Columns(j).ColumnWidth = MIDDLE_COL_WIDTH
@@ -451,7 +416,6 @@ Public Sub ExportTableToPDF()
             .VerticalAlignment = MIDDLE_V_ALIGN
         End With
     Next j
-
     '-- Right section data formatting --
     Dim rightStartCol As Long
     rightStartCol = leftCount + middleCount + 1
@@ -464,24 +428,20 @@ Public Sub ExportTableToPDF()
             .VerticalAlignment = RIGHT_V_ALIGN
         End With
     Next j
-
     '-- Auto-fit data row heights (must run after fonts, wrap, and widths are set) --
     tmpWs.Range(tmpWs.Cells(dataStartRow, 1), tmpWs.Cells(dataEndRow, totalOutputCols)).EntireRow.AutoFit
-
     ' Enforce minimum row height so short rows don't get too compact
     For i = dataStartRow To dataEndRow
         If tmpWs.Rows(i).RowHeight < MIN_DATA_ROW_HEIGHT Then
             tmpWs.Rows(i).RowHeight = MIN_DATA_ROW_HEIGHT
         End If
     Next i
-
     '-- Alternating row colors --
     For i = dataStartRow To dataEndRow
         If (i - dataStartRow) Mod 2 = 1 Then
             tmpWs.Range(tmpWs.Cells(i, 1), tmpWs.Cells(i, totalOutputCols)).Interior.Color = ALT_ROW_COLOR
         End If
     Next i
-
     '-- Table borders --
     With tmpWs.Range(tmpWs.Cells(tableStartRow, 1), tmpWs.Cells(dataEndRow, totalOutputCols))
         .Borders(xlEdgeLeft).LineStyle = xlContinuous
@@ -499,7 +459,6 @@ Public Sub ExportTableToPDF()
         .Borders(xlInsideHorizontal).Weight = xlHairline
         .Borders(xlInsideHorizontal).Color = RGB(180, 180, 180)
     End With
-
     ' Thicker border below header row
     With tmpWs.Range(tmpWs.Cells(tableStartRow, 1), tmpWs.Cells(tableStartRow, totalOutputCols))
         .Borders(xlEdgeBottom).LineStyle = xlContinuous
@@ -524,8 +483,8 @@ Public Sub ExportTableToPDF()
         ' Margins (inches)
         .TopMargin = Application.InchesToPoints(0.75)
         .BottomMargin = Application.InchesToPoints(0.9)
-        .LeftMargin = Application.InchesToPoints(0.12)
-        .RightMargin = Application.InchesToPoints(0.12)
+        .LeftMargin = Application.InchesToPoints(0.05)
+        .RightMargin = Application.InchesToPoints(0.05)
         .HeaderMargin = Application.InchesToPoints(0.3)
         .FooterMargin = Application.InchesToPoints(0.5)
         ' Fit all columns on one page width, let rows flow to multiple pages
