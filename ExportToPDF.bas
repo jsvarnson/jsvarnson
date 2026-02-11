@@ -76,7 +76,7 @@ Private Const LEFT_HDR_BOLD As Boolean = True       ' Header bold - True
 Private Const LEFT_HDR_FONT_COLOR As Long = 16777215 ' Header font color (white) - 16777215
 Private Const LEFT_HDR_BG_COLOR As Long = 6697728  ' Header background (dark teal) - 6697728
 Private Const LEFT_HDR_H_ALIGN As Long = -4108     ' Header horizontal alignment (xlCenter) - -4108
-Private Const LEFT_HDR_V_ALIGN As Long = -4107     ' Header vertical alignment (xlBottom) - -4107
+Private Const LEFT_HDR_V_ALIGN As Long = -4108     ' Header vertical alignment (xlCenter) - -4108
 Private Const LEFT_HDR_WRAP_TEXT As Boolean = False ' Header wrap text - False
 Private Const LEFT_HDR_ORIENTATION As Integer = 0  ' Header text orientation (degrees) - 0
 
@@ -110,7 +110,7 @@ Private Const RIGHT_HDR_BOLD As Boolean = True      ' Header bold - True
 Private Const RIGHT_HDR_FONT_COLOR As Long = 16777215 ' Header font color (white) - 16777215
 Private Const RIGHT_HDR_BG_COLOR As Long = 6697728 ' Header background (dark teal) - 6697728
 Private Const RIGHT_HDR_H_ALIGN As Long = -4108    ' Header horizontal alignment (xlCenter) - -4108
-Private Const RIGHT_HDR_V_ALIGN As Long = -4107    ' Header vertical alignment (xlBottom) - -4107
+Private Const RIGHT_HDR_V_ALIGN As Long = -4108    ' Header vertical alignment (xlCenter) - -4108
 Private Const RIGHT_HDR_WRAP_TEXT As Boolean = False ' Header wrap text - False
 Private Const RIGHT_HDR_ORIENTATION As Integer = 0 ' Header text orientation (degrees) - 0
 
