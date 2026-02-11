@@ -511,9 +511,9 @@ Public Sub ExportTableToPDF()
         ' Clear other header/footer sections
         .LeftHeader = ""
         .CenterHeader = ""
-        .LeftFooter = ""
-        .CenterFooter = "Page &P of &N"
-        .RightFooter = ""
+        .LeftFooter = "*Not HFCS, Not present in the final product" & Chr(10) & Chr(8224) & " Gluten-Free"
+        .CenterFooter = ""
+        .RightFooter = "Page &P of &N"
         ' Margins (inches)
         .TopMargin = Application.InchesToPoints(0.75)
         .BottomMargin = Application.InchesToPoints(0.5)
