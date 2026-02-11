@@ -41,7 +41,7 @@ Private Const TABLE_END_COL As String = "AL"
 Private Const PDF_TITLE As String = "Molson Coors Beverage Company"
 ' PDF description paragraph (first page only, appears below the title)
 Private Const PDF_DESCRIPTION As String = _
-    "Nutritional, Ingredient and Fermentation Source Data " & Chr(150) & " Brands sold in the U.S. only." & Chr(10) & _
+    "Nutritional, Ingredient and Fermentation Source Data – Brands sold in the U.S. only." & vbLf & _
     "Values are average and approximate and are based on a standard regulatory serving size. " & _
     "Our products contain no Fat, Cholesterol, or High Fructose Corn Syrup. " & _
     "Where corn syrup is used as an adjunct to aid fermentation, it is consumed " & _
