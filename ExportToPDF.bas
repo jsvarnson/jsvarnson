@@ -361,6 +361,8 @@ Public Sub ExportTableToPDF()
         .Font.Size = TITLE_FONT_SIZE
         .Font.Bold = True
         .Font.Color = RGB(0, 0, 0)
+        .HorizontalAlignment = xlLeft
+        .IndentLevel = 2
         .VerticalAlignment = xlBottom
     End With
     tmpWs.Rows(2).RowHeight = 36
@@ -370,6 +372,8 @@ Public Sub ExportTableToPDF()
         .Font.Size = DESC_FONT_SIZE
         .Font.Color = RGB(80, 80, 80)
         .WrapText = True
+        .HorizontalAlignment = xlLeft
+        .IndentLevel = 2
         .VerticalAlignment = xlTop
     End With
     tmpWs.Rows(3).RowHeight = 30
@@ -509,14 +513,14 @@ Public Sub ExportTableToPDF()
         .Orientation = xlLandscape
         .PaperSize = xlPaperLetter
         ' "Updated: MM/dd/YYYY" in top-right of every page
-        .RightHeader = "Updated: " & Format(Date, "MM/dd/YYYY")
+        .RightHeader = "Updated: " & Format(Date, "MM/dd/YYYY") & "   "
         .RightHeaderPicture.Filename = ""  ' no picture
         ' Clear other header/footer sections
         .LeftHeader = ""
         .CenterHeader = ""
-        .LeftFooter = "*Not HFCS, Not present in the final product" & Chr(10) & ChrW(8224) & " Gluten-Free"
+        .LeftFooter = "   *Not HFCS, Not present in the final product" & Chr(10) & "   " & ChrW(8224) & " Gluten-Free"
         .CenterFooter = ""
-        .RightFooter = "Page &P of &N"
+        .RightFooter = "Page &P of &N   "
         ' Margins (inches)
         .TopMargin = Application.InchesToPoints(0.75)
         .BottomMargin = Application.InchesToPoints(0.9)
