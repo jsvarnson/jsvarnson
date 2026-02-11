@@ -63,7 +63,7 @@ Private Const DEFAULT_PDF_PATH As String = ""
 'Private Const HEADER_BG_COLOR As Long = 6697728    ' Dark teal header background (RGB: 0, 102, 102) - 6697728
 'Private Const ALT_ROW_COLOR As Long = 15921906     ' Light gray for alternating rows - 15921906
 ' General
-Private Const TITLE_TOP_SPACER As Double = 20      ' Spacer height above title to clear page header - 20
+Private Const TITLE_TOP_SPACER As Double = 35      ' Spacer height above title to clear page header - 20
 Private Const HEADER_ROW_HEIGHT As Double = 90     ' Height for the header row (vertical text) - 90
 Private Const MIN_DATA_ROW_HEIGHT As Double = 15   ' Minimum height for data rows - 15
 Private Const TITLE_FONT_SIZE As Integer = 28      ' Font size for the title - 14
@@ -517,12 +517,12 @@ Public Sub ExportTableToPDF()
         .CenterFooter = ""
         .RightFooter = "Page &P of &N"
         ' Margins (inches)
-        .TopMargin = Application.InchesToPoints(0.75)
-        .BottomMargin = Application.InchesToPoints(0.5)
+        .TopMargin = Application.InchesToPoints(1)
+        .BottomMargin = Application.InchesToPoints(0.9)
         .LeftMargin = Application.InchesToPoints(0.4)
         .RightMargin = Application.InchesToPoints(0.4)
-        .HeaderMargin = Application.InchesToPoints(0.3)
-        .FooterMargin = Application.InchesToPoints(0.3)
+        .HeaderMargin = Application.InchesToPoints(0.4)
+        .FooterMargin = Application.InchesToPoints(0.5)
         ' Fit all columns on one page width, let rows flow to multiple pages
         .Zoom = False
         .FitToPagesWide = 1
