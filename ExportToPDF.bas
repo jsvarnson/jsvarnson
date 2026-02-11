@@ -127,7 +127,7 @@ Private Const LEFT_COL_WIDTH As Double = 18       ' Width for left columns
 Private Const MIDDLE_COL_WIDTH As Double = 3.5     ' Width for vertical middle columns
 Private Const RIGHT_COL_WIDTH As Double = 18       ' Width for right columns
 Private Const HEADER_ROW_HEIGHT As Double = 90     ' Height for the header row (vertical text)
-Private Const DATA_ROW_HEIGHT As Double = 15       ' Height for data rows
+Private Const MIN_DATA_ROW_HEIGHT As Double = 15    ' Minimum height for data rows
 Private Const TITLE_FONT_SIZE As Integer = 14      ' Font size for the title
 Private Const DESC_FONT_SIZE As Integer = 10       ' Font size for the description
 Private Const HEADER_FONT_SIZE As Integer = 8      ' Font size for table headers
@@ -299,7 +299,7 @@ Public Sub ExportTableToPDF()
     Next i
 
     '--------------------------------------------------------------------------
-    ' 7. Create temporary worksheet and build the formatted table
+    ' 7. Create temporary worksheet and write all table data
     '--------------------------------------------------------------------------
     Set tmpWs = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
     tmpWs.Name = "PDF_Export_Temp_" & Format(Now, "hhmmss")
@@ -311,54 +311,19 @@ Public Sub ExportTableToPDF()
     rightCount = UBound(rightCols) - LBound(rightCols) + 1
 
     '-- Title (Row 1) --
-    With tmpWs.Cells(1, 1)
-        .Value = PDF_TITLE
-        .Font.Size = TITLE_FONT_SIZE
-        .Font.Bold = True
-        .Font.Color = RGB(0, 0, 0)
-    End With
+    tmpWs.Cells(1, 1).Value = PDF_TITLE
     tmpWs.Range(tmpWs.Cells(1, 1), tmpWs.Cells(1, totalOutputCols)).Merge
-    tmpWs.Rows(1).RowHeight = 22
 
-    '-- Description (Row 2-3, merged) --
-    With tmpWs.Cells(2, 1)
-        .Value = PDF_DESCRIPTION
-        .Font.Size = DESC_FONT_SIZE
-        .Font.Color = RGB(80, 80, 80)
-        .WrapText = True
-        .VerticalAlignment = xlTop
-    End With
+    '-- Description (Rows 2-3, merged) --
+    tmpWs.Cells(2, 1).Value = PDF_DESCRIPTION
     tmpWs.Range(tmpWs.Cells(2, 1), tmpWs.Cells(3, totalOutputCols)).Merge
-    tmpWs.Rows(2).RowHeight = 20
-    tmpWs.Rows(3).RowHeight = 20
 
-    '-- Spacer row --
-    tmpWs.Rows(4).RowHeight = 6
-
-    '-- Table starts at row 5 --
+    '-- Table starts at row 5 (row 4 is a spacer) --
     tableStartRow = 5
 
     '-- Write table headers --
     For j = 0 To totalOutputCols - 1
-        With tmpWs.Cells(tableStartRow, j + 1)
-            .Value = GetDisplayName(CStr(allOutputCols(j)))
-            .Font.Size = HEADER_FONT_SIZE
-            .Font.Bold = True
-            .Font.Color = RGB(255, 255, 255)
-            .Interior.Color = HEADER_BG_COLOR
-            .HorizontalAlignment = xlCenter
-            .VerticalAlignment = xlBottom
-            .WrapText = False
-        End With
-    Next j
-    tmpWs.Rows(tableStartRow).RowHeight = HEADER_ROW_HEIGHT
-
-    '-- Apply vertical rotation to middle column headers --
-    Dim middleStartCol As Long
-    middleStartCol = leftCount + 1  ' 1-based column index where middle cols begin
-    For j = middleStartCol To middleStartCol + middleCount - 1
-        tmpWs.Cells(tableStartRow, j).Orientation = 90
-        tmpWs.Cells(tableStartRow, j).WrapText = False
+        tmpWs.Cells(tableStartRow, j + 1).Value = GetDisplayName(CStr(allOutputCols(j)))
     Next j
 
     '-- Write filtered data rows --
@@ -372,36 +337,75 @@ Public Sub ExportTableToPDF()
     Next i
 
     '--------------------------------------------------------------------------
-    ' 8. Format the data area
+    ' 8. Apply all formatting
     '--------------------------------------------------------------------------
     Dim dataEndRow As Long
     dataEndRow = dataStartRow + filteredCount - 1
 
-    ' Format all data cells
+    '-- Title formatting --
+    With tmpWs.Cells(1, 1)
+        .Font.Size = TITLE_FONT_SIZE
+        .Font.Bold = True
+        .Font.Color = RGB(0, 0, 0)
+    End With
+    tmpWs.Rows(1).RowHeight = 22
+
+    '-- Description formatting --
+    With tmpWs.Cells(2, 1)
+        .Font.Size = DESC_FONT_SIZE
+        .Font.Color = RGB(80, 80, 80)
+        .WrapText = True
+        .VerticalAlignment = xlTop
+    End With
+    tmpWs.Rows(2).RowHeight = 20
+    tmpWs.Rows(3).RowHeight = 20
+
+    '-- Spacer row --
+    tmpWs.Rows(4).RowHeight = 6
+
+    '-- Header row formatting --
+    For j = 0 To totalOutputCols - 1
+        With tmpWs.Cells(tableStartRow, j + 1)
+            .Font.Size = HEADER_FONT_SIZE
+            .Font.Bold = True
+            .Font.Color = RGB(255, 255, 255)
+            .Interior.Color = HEADER_BG_COLOR
+            .HorizontalAlignment = xlCenter
+            .VerticalAlignment = xlBottom
+            .WrapText = False
+        End With
+    Next j
+    tmpWs.Rows(tableStartRow).RowHeight = HEADER_ROW_HEIGHT
+
+    '-- Vertical rotation for middle column headers --
+    Dim middleStartCol As Long
+    middleStartCol = leftCount + 1
+    For j = middleStartCol To middleStartCol + middleCount - 1
+        tmpWs.Cells(tableStartRow, j).Orientation = 90
+        tmpWs.Cells(tableStartRow, j).WrapText = False
+    Next j
+
+    '-- Data cell formatting (font, alignment, wrap) --
     With tmpWs.Range(tmpWs.Cells(dataStartRow, 1), tmpWs.Cells(dataEndRow, totalOutputCols))
         .Font.Size = DATA_FONT_SIZE
         .VerticalAlignment = xlCenter
         .WrapText = True
     End With
 
-    ' Set row heights for data rows
-    For i = dataStartRow To dataEndRow
-        tmpWs.Rows(i).RowHeight = DATA_ROW_HEIGHT
-    Next i
-
-    ' Left columns: left-aligned, specific width
+    '-- Column widths and alignment --
+    ' Left columns: left-aligned, wider
     For j = 1 To leftCount
         tmpWs.Columns(j).ColumnWidth = LEFT_COL_WIDTH
         tmpWs.Range(tmpWs.Cells(dataStartRow, j), tmpWs.Cells(dataEndRow, j)).HorizontalAlignment = xlLeft
     Next j
 
-    ' Middle columns: center-aligned, narrow width
+    ' Middle columns: center-aligned, narrow
     For j = middleStartCol To middleStartCol + middleCount - 1
         tmpWs.Columns(j).ColumnWidth = MIDDLE_COL_WIDTH
         tmpWs.Range(tmpWs.Cells(dataStartRow, j), tmpWs.Cells(dataEndRow, j)).HorizontalAlignment = xlCenter
     Next j
 
-    ' Right columns: left-aligned, specific width
+    ' Right columns: left-aligned, wider
     Dim rightStartCol As Long
     rightStartCol = leftCount + middleCount + 1
     For j = rightStartCol To rightStartCol + rightCount - 1
@@ -409,14 +413,24 @@ Public Sub ExportTableToPDF()
         tmpWs.Range(tmpWs.Cells(dataStartRow, j), tmpWs.Cells(dataEndRow, j)).HorizontalAlignment = xlLeft
     Next j
 
-    ' Alternating row colors
+    '-- Auto-fit data row heights (must run after fonts, wrap, and widths are set) --
+    tmpWs.Range(tmpWs.Cells(dataStartRow, 1), tmpWs.Cells(dataEndRow, totalOutputCols)).EntireRow.AutoFit
+
+    ' Enforce minimum row height so short rows don't get too compact
+    For i = dataStartRow To dataEndRow
+        If tmpWs.Rows(i).RowHeight < MIN_DATA_ROW_HEIGHT Then
+            tmpWs.Rows(i).RowHeight = MIN_DATA_ROW_HEIGHT
+        End If
+    Next i
+
+    '-- Alternating row colors --
     For i = dataStartRow To dataEndRow
         If (i - dataStartRow) Mod 2 = 1 Then
             tmpWs.Range(tmpWs.Cells(i, 1), tmpWs.Cells(i, totalOutputCols)).Interior.Color = ALT_ROW_COLOR
         End If
     Next i
 
-    ' Table borders
+    '-- Table borders --
     With tmpWs.Range(tmpWs.Cells(tableStartRow, 1), tmpWs.Cells(dataEndRow, totalOutputCols))
         .Borders(xlEdgeLeft).LineStyle = xlContinuous
         .Borders(xlEdgeLeft).Weight = xlThin
@@ -434,7 +448,7 @@ Public Sub ExportTableToPDF()
         .Borders(xlInsideHorizontal).Color = RGB(180, 180, 180)
     End With
 
-    ' Thicker border below header row
+    '-- Thicker border below header row --
     With tmpWs.Range(tmpWs.Cells(tableStartRow, 1), tmpWs.Cells(tableStartRow, totalOutputCols))
         .Borders(xlEdgeBottom).LineStyle = xlContinuous
         .Borders(xlEdgeBottom).Weight = xlMedium
