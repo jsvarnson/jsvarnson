@@ -55,7 +55,7 @@ Private Const DEFAULT_PDF_PATH As String = ""
 'Private Const MIDDLE_COL_WIDTH As Double = 6       ' Width for vertical middle columns - 3.5
 'Private Const RIGHT_COL_WIDTH As Double = 30       ' Width for right columns - 18
 'Private Const HEADER_ROW_HEIGHT As Double = 90     ' Height for the header row (vertical text) - 90
-'Private Const MIN_DATA_ROW_HEIGHT As Double = 15   ' Minimum height for data rows - 15
+'Private Const MIN_DATA_ROW_HEIGHT As Double = 20   ' Minimum height for data rows - 15
 'Private Const TITLE_FONT_SIZE As Integer = 28      ' Font size for the title - 14
 'Private Const DESC_FONT_SIZE As Integer = 14       ' Font size for the description - 10
 'Private Const HEADER_FONT_SIZE As Integer = 12     ' Font size for table headers - 8
@@ -65,7 +65,7 @@ Private Const DEFAULT_PDF_PATH As String = ""
 ' General
 Private Const TITLE_TOP_SPACER As Double = 20      ' Spacer height above title to clear page header - 20
 Private Const HEADER_ROW_HEIGHT As Double = 90     ' Height for the header row (vertical text) - 90
-Private Const MIN_DATA_ROW_HEIGHT As Double = 15   ' Minimum height for data rows - 15
+Private Const MIN_DATA_ROW_HEIGHT As Double = 20   ' Minimum height for data rows - 15
 Private Const TITLE_FONT_SIZE As Integer = 28      ' Font size for the title - 14
 Private Const DESC_FONT_SIZE As Integer = 14       ' Font size for the description - 10
 Private Const ALT_ROW_COLOR As Long = 15921906     ' Light gray for alternating rows - 15921906
@@ -513,14 +513,14 @@ Public Sub ExportTableToPDF()
         .Orientation = xlLandscape
         .PaperSize = xlPaperLetter
         ' "Updated: MM/dd/YYYY" in top-right of every page
-        .RightHeader = "Updated: " & Format(Date, "MM/dd/YYYY") & "   "
+        .RightHeader = "Updated: " & Format(Date, "MM/dd/YYYY")
         .RightHeaderPicture.Filename = ""  ' no picture
         ' Clear other header/footer sections
         .LeftHeader = ""
         .CenterHeader = ""
         .LeftFooter = "   *Not HFCS, Not present in the final product" & Chr(10) & "   " & ChrW(8224) & " Gluten-Free"
         .CenterFooter = ""
-        .RightFooter = "Page &P of &N   "
+        .RightFooter = "Page &P of &N"
         ' Margins (inches)
         .TopMargin = Application.InchesToPoints(0.75)
         .BottomMargin = Application.InchesToPoints(0.9)
