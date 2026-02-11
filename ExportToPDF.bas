@@ -472,14 +472,14 @@ Public Sub ExportTableToPDF()
         .Orientation = xlLandscape
         .PaperSize = xlPaperLetter
         ' "Updated: MM/dd/YYYY" in top-right of every page
-        .RightHeader = "Updated: " & Format(Date, "MM/dd/YYYY")
+        .RightHeader = "&14Updated: " & Format(Date, "MM/dd/YYYY")
         .RightHeaderPicture.Filename = ""  ' no picture
         ' Clear other header/footer sections
         .LeftHeader = ""
         .CenterHeader = ""
-        .LeftFooter = "   *Not HFCS, Not present in the final product" & Chr(10) & "   " & ChrW(8224) & " Gluten-Free"
+        .LeftFooter = "&14   *Not HFCS, Not present in the final product" & Chr(10) & "&14   " & ChrW(8224) & " Gluten-Free"
         .CenterFooter = ""
-        .RightFooter = "Page &P of &N"
+        .RightFooter = "&14Page &P of &N"
         ' Margins (inches)
         .TopMargin = Application.InchesToPoints(0.75)
         .BottomMargin = Application.InchesToPoints(0.9)
