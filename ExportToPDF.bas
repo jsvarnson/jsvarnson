@@ -379,7 +379,14 @@ Public Sub ExportTableToPDF()
             .VerticalAlignment = MIDDLE_HDR_V_ALIGN
             .WrapText = MIDDLE_HDR_WRAP_TEXT
             .Orientation = MIDDLE_HDR_ORIENTATION
-            .Value = Space(MIDDLE_HDR_BOTTOM_PAD) & .Value
+            '-- Pad each wrapped line with leading spaces --
+            Dim hdrWords() As String
+            hdrWords = Split(.Value, " ")
+            Dim k As Long
+            For k = LBound(hdrWords) To UBound(hdrWords)
+                hdrWords(k) = Space(MIDDLE_HDR_BOTTOM_PAD) & hdrWords(k)
+            Next k
+            .Value = Join(hdrWords, Chr(10))
         End With
     Next j
     '-- Right section header formatting --
