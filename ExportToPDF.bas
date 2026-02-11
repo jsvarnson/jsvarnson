@@ -128,9 +128,17 @@ Private Const HEADER_ROW_HEIGHT As Double = 90     ' Height for the header row (
 Private Const MIN_DATA_ROW_HEIGHT As Double = 15   ' Minimum height for data rows - 15
 Private Const TITLE_FONT_SIZE As Integer = 28      ' Font size for the title - 14
 Private Const DESC_FONT_SIZE As Integer = 14       ' Font size for the description - 10
-Private Const HEADER_FONT_SIZE As Integer = 12     ' Font size for table headers - 8
-Private Const HEADER_BG_COLOR As Long = 6697728    ' Dark teal header background (RGB: 0, 102, 102) - 6697728
 Private Const ALT_ROW_COLOR As Long = 15921906     ' Light gray for alternating rows - 15921906
+
+' Left section header formatting
+Private Const LEFT_HDR_FONT_SIZE As Integer = 12   ' Header font size - 12
+Private Const LEFT_HDR_BOLD As Boolean = True       ' Header bold - True
+Private Const LEFT_HDR_FONT_COLOR As Long = 16777215 ' Header font color (white) - 16777215
+Private Const LEFT_HDR_BG_COLOR As Long = 6697728  ' Header background (dark teal) - 6697728
+Private Const LEFT_HDR_H_ALIGN As Long = -4108     ' Header horizontal alignment (xlCenter) - -4108
+Private Const LEFT_HDR_V_ALIGN As Long = -4107     ' Header vertical alignment (xlBottom) - -4107
+Private Const LEFT_HDR_WRAP_TEXT As Boolean = False ' Header wrap text - False
+Private Const LEFT_HDR_ORIENTATION As Integer = 0  ' Header text orientation (degrees) - 0
 
 ' Left section data formatting
 Private Const LEFT_COL_WIDTH As Double = 18        ' Column width - 18
@@ -139,12 +147,32 @@ Private Const LEFT_WRAP_TEXT As Boolean = True      ' Wrap text - True
 Private Const LEFT_H_ALIGN As Long = -4131         ' Horizontal alignment (xlLeft) - -4131
 Private Const LEFT_V_ALIGN As Long = -4108         ' Vertical alignment (xlCenter) - -4108
 
+' Middle section header formatting
+Private Const MIDDLE_HDR_FONT_SIZE As Integer = 12 ' Header font size - 12
+Private Const MIDDLE_HDR_BOLD As Boolean = True     ' Header bold - True
+Private Const MIDDLE_HDR_FONT_COLOR As Long = 16777215 ' Header font color (white) - 16777215
+Private Const MIDDLE_HDR_BG_COLOR As Long = 6697728 ' Header background (dark teal) - 6697728
+Private Const MIDDLE_HDR_H_ALIGN As Long = -4108   ' Header horizontal alignment (xlCenter) - -4108
+Private Const MIDDLE_HDR_V_ALIGN As Long = -4107   ' Header vertical alignment (xlBottom) - -4107
+Private Const MIDDLE_HDR_WRAP_TEXT As Boolean = False ' Header wrap text - False
+Private Const MIDDLE_HDR_ORIENTATION As Integer = 90 ' Header text orientation (degrees) - 90
+
 ' Middle section data formatting
 Private Const MIDDLE_COL_WIDTH As Double = 6       ' Column width - 6
 Private Const MIDDLE_DATA_FONT_SIZE As Integer = 11 ' Font size - 11
 Private Const MIDDLE_WRAP_TEXT As Boolean = False   ' Wrap text - False
 Private Const MIDDLE_H_ALIGN As Long = -4108       ' Horizontal alignment (xlCenter) - -4108
 Private Const MIDDLE_V_ALIGN As Long = -4108       ' Vertical alignment (xlCenter) - -4108
+
+' Right section header formatting
+Private Const RIGHT_HDR_FONT_SIZE As Integer = 12  ' Header font size - 12
+Private Const RIGHT_HDR_BOLD As Boolean = True      ' Header bold - True
+Private Const RIGHT_HDR_FONT_COLOR As Long = 16777215 ' Header font color (white) - 16777215
+Private Const RIGHT_HDR_BG_COLOR As Long = 6697728 ' Header background (dark teal) - 6697728
+Private Const RIGHT_HDR_H_ALIGN As Long = -4108    ' Header horizontal alignment (xlCenter) - -4108
+Private Const RIGHT_HDR_V_ALIGN As Long = -4107    ' Header vertical alignment (xlBottom) - -4107
+Private Const RIGHT_HDR_WRAP_TEXT As Boolean = False ' Header wrap text - False
+Private Const RIGHT_HDR_ORIENTATION As Integer = 0 ' Header text orientation (degrees) - 0
 
 ' Right section data formatting
 Private Const RIGHT_COL_WIDTH As Double = 30       ' Column width - 30
@@ -381,27 +409,53 @@ Public Sub ExportTableToPDF()
     '-- Spacer row --
     tmpWs.Rows(4).RowHeight = 6
 
-    '-- Header row formatting --
-    For j = 0 To totalOutputCols - 1
-        With tmpWs.Cells(tableStartRow, j + 1)
-            .Font.Size = HEADER_FONT_SIZE
-            .Font.Bold = True
-            .Font.Color = RGB(255, 255, 255)
-            .Interior.Color = HEADER_BG_COLOR
-            .HorizontalAlignment = xlCenter
-            .VerticalAlignment = xlBottom
-            .WrapText = False
+    '-- Left section header formatting --
+    For j = 1 To leftCount
+        With tmpWs.Cells(tableStartRow, j)
+            .Font.Size = LEFT_HDR_FONT_SIZE
+            .Font.Bold = LEFT_HDR_BOLD
+            .Font.Color = LEFT_HDR_FONT_COLOR
+            .Interior.Color = LEFT_HDR_BG_COLOR
+            .HorizontalAlignment = LEFT_HDR_H_ALIGN
+            .VerticalAlignment = LEFT_HDR_V_ALIGN
+            .WrapText = LEFT_HDR_WRAP_TEXT
+            .Orientation = LEFT_HDR_ORIENTATION
         End With
     Next j
-    tmpWs.Rows(tableStartRow).RowHeight = HEADER_ROW_HEIGHT
 
-    '-- Vertical rotation for middle column headers --
+    '-- Middle section header formatting --
     Dim middleStartCol As Long
     middleStartCol = leftCount + 1
     For j = middleStartCol To middleStartCol + middleCount - 1
-        tmpWs.Cells(tableStartRow, j).Orientation = 90
-        tmpWs.Cells(tableStartRow, j).WrapText = False
+        With tmpWs.Cells(tableStartRow, j)
+            .Font.Size = MIDDLE_HDR_FONT_SIZE
+            .Font.Bold = MIDDLE_HDR_BOLD
+            .Font.Color = MIDDLE_HDR_FONT_COLOR
+            .Interior.Color = MIDDLE_HDR_BG_COLOR
+            .HorizontalAlignment = MIDDLE_HDR_H_ALIGN
+            .VerticalAlignment = MIDDLE_HDR_V_ALIGN
+            .WrapText = MIDDLE_HDR_WRAP_TEXT
+            .Orientation = MIDDLE_HDR_ORIENTATION
+        End With
     Next j
+
+    '-- Right section header formatting --
+    Dim rightHdrStartCol As Long
+    rightHdrStartCol = leftCount + middleCount + 1
+    For j = rightHdrStartCol To rightHdrStartCol + rightCount - 1
+        With tmpWs.Cells(tableStartRow, j)
+            .Font.Size = RIGHT_HDR_FONT_SIZE
+            .Font.Bold = RIGHT_HDR_BOLD
+            .Font.Color = RIGHT_HDR_FONT_COLOR
+            .Interior.Color = RIGHT_HDR_BG_COLOR
+            .HorizontalAlignment = RIGHT_HDR_H_ALIGN
+            .VerticalAlignment = RIGHT_HDR_V_ALIGN
+            .WrapText = RIGHT_HDR_WRAP_TEXT
+            .Orientation = RIGHT_HDR_ORIENTATION
+        End With
+    Next j
+
+    tmpWs.Rows(tableStartRow).RowHeight = HEADER_ROW_HEIGHT
 
     '-- Left section data formatting --
     For j = 1 To leftCount
