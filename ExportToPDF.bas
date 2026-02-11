@@ -123,17 +123,17 @@ End Function
 '------------------------------------------------------------------------------
 ' FORMATTING CONSTANTS
 '------------------------------------------------------------------------------
-Private Const LEFT_COL_WIDTH As Double = 18       ' Width for left columns
-Private Const MIDDLE_COL_WIDTH As Double = 3.5     ' Width for vertical middle columns
-Private Const RIGHT_COL_WIDTH As Double = 18       ' Width for right columns
-Private Const HEADER_ROW_HEIGHT As Double = 90     ' Height for the header row (vertical text)
-Private Const MIN_DATA_ROW_HEIGHT As Double = 15    ' Minimum height for data rows
-Private Const TITLE_FONT_SIZE As Integer = 14      ' Font size for the title
-Private Const DESC_FONT_SIZE As Integer = 10       ' Font size for the description
-Private Const HEADER_FONT_SIZE As Integer = 8      ' Font size for table headers
-Private Const DATA_FONT_SIZE As Integer = 8        ' Font size for table data
-Private Const HEADER_BG_COLOR As Long = 6697728    ' Dark teal header background (RGB: 0, 102, 102)
-Private Const ALT_ROW_COLOR As Long = 15921906     ' Light gray for alternating rows
+Private Const LEFT_COL_WIDTH As Double = 18        ' Width for left columns - 18
+Private Const MIDDLE_COL_WIDTH As Double = 6       ' Width for vertical middle columns - 3.5
+Private Const RIGHT_COL_WIDTH As Double = 30       ' Width for right columns - 18
+Private Const HEADER_ROW_HEIGHT As Double = 90     ' Height for the header row (vertical text) - 90
+Private Const MIN_DATA_ROW_HEIGHT As Double = 15   ' Minimum height for data rows - 15
+Private Const TITLE_FONT_SIZE As Integer = 28      ' Font size for the title - 14
+Private Const DESC_FONT_SIZE As Integer = 14       ' Font size for the description - 10
+Private Const HEADER_FONT_SIZE As Integer = 12     ' Font size for table headers - 8
+Private Const DATA_FONT_SIZE As Integer = 11       ' Font size for table data - 8
+Private Const HEADER_BG_COLOR As Long = 6697728    ' Dark teal header background (RGB: 0, 102, 102) - 6697728
+Private Const ALT_ROW_COLOR As Long = 15921906     ' Light gray for alternating rows - 15921906
 
 '==============================================================================
 ' MAIN ENTRY POINT - Assign this macro to a button
