@@ -1,6 +1,6 @@
 import type { RenderPropsOf } from 'claude-code'
 import { expect, mock, test } from 'claude-code/testing'
-import type { TestBody } from 'claude-code/testing'
+import type { MockClock, TestBody } from 'claude-code/testing'
 
 import { latestResults } from '../hooks/lib/ledger'
 
@@ -136,15 +136,27 @@ function world(on: TestOn, { ledger = [], live }: Options = {}): World {
   on('session.usage', () => ({ deny: 'no listing in tests' }))
   on('ui.toast', () => ({ value: undefined }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
-  mock.clock(on, { now: 60_000 })
+  clock = mock.clock(on, { now: 60_000 })
   on('classic.SessionStart', () => ({}))
+  on('session.start', () => ({ cwd: '/work' }))
+  on('command.register', () => ({ value: { command: 'guild' } }))
+  on('tool.register', () => ({ value: { tool: 'mcp__guild__quest' } }))
   return made
+}
+
+// The guild loads, and resets restore, just after the hook that starts them returns.
+let clock: MockClock
+const settle = () => clock.settle()
+const start = async ($: Parameters<TestBody>[0]) => {
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await settle()
 }
 
 for (const source of ['clear', 'resume', 'fork'] as const) {
   test(`after ${source}, the pane lists the whole roster again`, async ($, on) => {
     world(on)
     await $.classic.SessionStart({ source })
+    await settle()
     for (const surface of ['terminal', 'desktop'] as const) {
       const ui = await $.ui.mount({ plugin: 'guild', surface, component: 'Pane', requestId: 'guild', props: PANE_PROPS })
       expect(await ui.find({ key: 'summon-seer' })).toBeDefined()
@@ -158,6 +170,7 @@ for (const source of ['startup', 'compact'] as const) {
   test(`${source} does not reload the guild`, async ($, on) => {
     const { state } = world(on)
     await $.classic.SessionStart({ source })
+    await settle()
     expect(state.get('roster')).toBeUndefined()
   })
 }
@@ -166,6 +179,7 @@ test('a summons started before /clear is settled and written to the ledger after
   const { files, state, resetState } = world(on)
   on('agent.spawn', () => ({ model: 'opus', agentId: 'a1' }))
   on('turn.complete', () => ({ text: '' }))
+  await start($)
   await $.agent.spawn({
     tool_use_id: 't1',
     prompt: 'Question: does it work?\nScope: the mod',
@@ -175,6 +189,7 @@ test('a summons started before /clear is settled and written to the ledger after
   expect((state.get('active') as unknown[] | undefined)?.length).toBe(1)
   resetState()
   await $.classic.SessionStart({ source: 'clear' })
+  await settle()
 
   const pane = await $.ui.mount({ plugin: 'guild', surface: 'desktop', component: 'Pane', requestId: 'guild', props: PANE_PROPS })
   expect(await pane.find({ type: 'Text', text: /Check the mod/ })).toBeDefined()
@@ -196,6 +211,7 @@ test('after /clear, Needs attention is rebuilt from each member\'s latest ledger
     ledgerLine('wizard', 'L-4', false, 'Latest wizard work'),
   ] })
   await $.classic.SessionStart({ source: 'clear' })
+  await settle()
   const pane = await $.ui.mount({ plugin: 'guild', surface: 'desktop', component: 'Pane', requestId: 'guild', props: PANE_PROPS })
   expect(await pane.find({ key: 'head-attention' })).toBeDefined()
   expect(await pane.find({ type: 'Text', text: /Needs attention 1/ })).toBeDefined()
@@ -218,13 +234,16 @@ test('a reset that lands while a summons settles does not bring it back as at wo
   const made = world(on)
   on('agent.spawn', (_, e) => ({ model: 'opus', agentId: (e as unknown as { agentId: string }).agentId }))
   on('turn.complete', () => ({ text: '' }))
+  await start($)
   await spawn($, 'a1', 'Check the mod')
   made.afterSet = async key => {
     if (key !== 'recent') return
     made.afterSet = undefined
     await $.classic.SessionStart({ source: 'clear' })
+    await settle()
   }
   await $.turn.complete({ turnId: 't2', agentId: 'a1', answer: GOOD_SCROLL, durationMs: 5000, isAborted: false, reason: 'answer' } as never)
+  await settle()
   expect(made.state.get('active')).toEqual([])
 })
 
@@ -232,11 +251,13 @@ test('after a reset, only summonses the runtime still runs come back; ended and 
   const { files, state, resetState } = world(on, { live: { a1: 'running', a2: 'killed' } })
   on('agent.spawn', (_, e) => ({ model: 'opus', agentId: (e as unknown as { agentId: string }).agentId }))
   on('turn.complete', () => ({ text: '' }))
+  await start($)
   await spawn($, 'a1', 'Still running')
   await spawn($, 'a2', 'Killed by clear')
   await spawn($, 'a3', 'From another conversation')
   resetState()
   await $.classic.SessionStart({ source: 'clear' })
+  await settle()
   expect((state.get('active') as { agentId: string }[]).map(one => one.agentId)).toEqual(['a1'])
 
   const ledgerIds = () => (([...files].find(([path]) => path.startsWith('ledger/'))?.[1] ?? '').match(/"agentId":"a\d"/g) ?? [])
@@ -253,10 +274,7 @@ test('session.start merges ledger results into recent and keeps the session\'s o
   state.set('recent', [
     { ledgerId: 'L-9', member: 'wizard', description: 'This session', isKept: true, failed: [], durationMs: 1, endedAt: 1 },
   ])
-  on('session.start', () => ({ cwd: '/work' }))
-  on('command.register', () => ({ value: { command: 'guild' } }))
-  on('tool.register', () => ({ value: { tool: 'mcp__guild__quest' } }))
-  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await start($)
   expect((state.get('recent') as { ledgerId: string }[]).map(one => one.ledgerId)).toEqual(['L-9', 'L-1'])
 })
 
@@ -288,6 +306,7 @@ test('after /clear the open quest is shown again and still takes updates', async
   await planQuest($)
   resetState()
   await $.classic.SessionStart({ source: 'clear' })
+  await settle()
   const pane = await $.ui.mount({ plugin: 'guild', surface: 'desktop', component: 'Pane', requestId: 'guild', props: PANE_PROPS })
   expect(await pane.find({ type: 'Text', text: /Event store pick/ })).toBeDefined()
   await pane.unmount()
@@ -302,6 +321,7 @@ for (const source of ['startup', 'compact'] as const) {
     await planQuest($)
     resetState()
     await $.classic.SessionStart({ source })
+    await settle()
     expect(state.get('quest')).toBeUndefined()
   })
 }
@@ -311,12 +331,10 @@ test('a module reload keeps summonses and the quest through a later /clear', asy
   // What $.state still holds after a module reload; the fresh module's maps are empty.
   state.set('active', [{ agentId: 'a1', member: 'wizard', description: 'Spans the reload', startedAt: 1 }])
   state.set('quest', { id: 'Q1', title: 'Event store pick', startedAt: 1, steps: [{ id: 1, member: 'you', task: 'Approve', status: 'pending' }] })
-  on('session.start', () => ({ cwd: '/work' }))
-  on('command.register', () => ({ value: { command: 'guild' } }))
-  on('tool.register', () => ({ value: { tool: 'mcp__guild__quest' } }))
-  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await start($)
   resetState()
   await $.classic.SessionStart({ source: 'clear' })
+  await settle()
   expect((state.get('active') as { agentId: string }[]).map(one => one.agentId)).toEqual(['a1'])
   expect((state.get('quest') as { title: string } | undefined)?.title).toBe('Event store pick')
 })

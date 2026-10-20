@@ -4,7 +4,7 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { GuildLeader, GuildMemberCard, GuildProposalCard, GuildQuest, GuildQuestStatus, GuildResult, GuildSummons } from '../types'
 import { asText, setFrontmatterScalar, splitFrontmatter } from './lib/frontmatter'
 import { guardWrite, writtenPath } from './lib/guard'
-import type { Guild, Member } from './lib/guild'
+import type { Guild, GuildFs, Member } from './lib/guild'
 import { agentType, guildmasterSection, join, loadGuild, memberDescription, memberPrompt } from './lib/guild'
 import { activityBar, formatElapsed, memberHex, toolSummary, truncate } from './lib/activity'
 import { latestResults } from './lib/ledger'
@@ -15,7 +15,8 @@ import type { Proposal } from './lib/proposals'
 import { applyProposal, bumpVersion, changelogWithEntry, parseProposal } from './lib/proposals'
 import { briefTome, checkPacts, missingBriefFields, pactsFor, parseScroll } from './lib/scroll'
 import type { Holder } from './lib/spells'
-import { declaredName, holdersOf, holds, namesOf, refusal as spellRefusal, skillBody, unclaimed } from './lib/spells'
+import { holdersOf, holds, refusal as spellRefusal, skillBody, unclaimed } from './lib/spells'
+import { aliasesOf, INDEX_FILE, indexText, pathsOf, scanSkills, unindexed } from './lib/skillindex'
 
 const PANE = 'guild'
 const roster = atom({ plugin: 'guild', key: 'roster' } as const, [] as GuildMemberCard[])
@@ -42,6 +43,8 @@ type FoundProposal = { path: string; raw: string; proposal: Proposal }
 let root = 'C:/Users/Joseph/.claude/guild'
 let isStrict = true
 let guild: Guild | undefined
+// The one load in flight, so every caller shares it instead of starting another.
+let loading: Promise<Guild> | undefined
 let fingerprint = ''
 // Summonses at work by agentId: the truth behind `active`, which /clear, /resume
 // and /branch reset while the members keep working.
@@ -49,14 +52,19 @@ const inFlight = new Map<string, GuildSummons>()
 // The quest as last written, so the same resets can't drop it.
 let lastQuest: GuildQuest | null = null
 let ledgerQueue: Promise<void> = Promise.resolve()
-// The Herald: main-loop tool calls this turn, whether it reports, and its last report.
+// The Herald: main-loop tool calls this turn, whether it reports, its last report,
+// the main loop's last answer, and whether a report is being written (and another asked for).
 let mainToolCalls = 0
 let isHeraldOn = true
 let lastHerald = ''
-// Spells: skill aliases and SKILL.md paths from disk, and the session's skill listing.
+let lastAnswer = ''
+let isHeraldWriting = false
+let heraldAgain: HeraldTrigger | undefined
+// Spells: skill aliases and SKILL.md paths, as spells/index.json records them.
 let aliases: ReadonlyMap<string, readonly string[]> = new Map()
 let skillPaths: ReadonlyMap<string, string> = new Map()
-let installedSkills: string[] = []
+
+type HeraldTrigger = 'turn' | 'asked'
 
 const newId = (prefix: string, now: number) =>
   `${prefix}-${now.toString(36)}-${Math.floor(Math.random() * 36 ** 4).toString(36).padStart(4, '0')}`
@@ -112,7 +120,7 @@ async function refreshProposals($: EngineInterface): Promise<FoundProposal[]> {
 async function stampDir($: EngineInterface, dir: string, parts: string[], depth: number): Promise<void> {
   if (!(await $.fs.exists(dir))) return
   for (const entry of await $.fs.list(dir)) {
-    if (entry.kind === 'file' && entry.name.endsWith('.md')) parts.push(`${dir}/${entry.name}:${entry.mtimeMs}`)
+    if (entry.kind === 'file' && /\.(md|json)$/.test(entry.name)) parts.push(`${dir}/${entry.name}:${entry.mtimeMs}`)
     if (entry.kind === 'dir' && depth > 0) await stampDir($, `${dir}/${entry.name}`, parts, depth - 1)
   }
 }
@@ -124,6 +132,7 @@ async function computeFingerprint($: EngineInterface): Promise<string> {
   await stampDir($, join(root, 'guildmaster'), parts, 0)
   await stampDir($, join(root, 'members'), parts, 1)
   await stampDir($, join(root, 'quests'), parts, 0)
+  await stampDir($, join(root, 'spells'), parts, 1)
   return parts.join('|')
 }
 
@@ -144,63 +153,20 @@ async function registerMember($: EngineInterface, loaded: Guild, member: Member)
   })
 }
 
-// The installed skills, read from disk and from the session's skill listing:
-// each plugin skill's folder ↔ declared-name aliases, where its SKILL.md is,
-// and the names the session can load (empty when the listing is unavailable).
-async function indexSkills($: EngineInterface): Promise<void> {
-  const claudeDir = root.slice(0, root.lastIndexOf('/'))
-  const nextAliases = new Map<string, string[]>()
-  const nextPaths = new Map<string, string>()
-  const userSkills = join(claudeDir, 'skills')
-  if (await $.fs.exists(userSkills)) {
-    for (const entry of await $.fs.list(userSkills)) {
-      const path = join(userSkills, entry.name, 'SKILL.md')
-      if (entry.kind === 'dir' && (await $.fs.exists(path))) nextPaths.set(entry.name, path)
-    }
-  }
-  const installedPath = join(claudeDir, 'plugins', 'installed_plugins.json')
-  const installed = (await $.fs.exists(installedPath))
-    ? (JSON.parse(await $.fs.read(installedPath)) as { plugins?: Record<string, { installPath?: string }[]> })
-    : {}
-  for (const [key, installs] of Object.entries(installed.plugins ?? {})) {
-    const plugin = key.slice(0, key.indexOf('@'))
-    const base = installs[0]?.installPath?.replace(/\\/g, '/')
-    if (!plugin || !base) continue
-    const manifestPath = join(base, '.claude-plugin', 'plugin.json')
-    const manifest = (await $.fs.exists(manifestPath))
-      ? (JSON.parse(await $.fs.read(manifestPath)) as { skills?: string | string[] })
-      : {}
-    const dirs = [manifest.skills ?? './skills'].flat().map(dir => join(base, dir.replace(/^\.\//, '')))
-    for (const dir of dirs) {
-      if (!(await $.fs.exists(dir))) continue
-      for (const entry of await $.fs.list(dir)) {
-        const path = join(dir, entry.name, 'SKILL.md')
-        if (entry.kind !== 'dir' || !(await $.fs.exists(path))) continue
-        const folder = `${plugin}:${entry.name}`
-        nextPaths.set(folder, path)
-        const declared = declaredName(await $.fs.read(path))
-        if (declared && declared !== entry.name) {
-          nextAliases.set(folder, [declared])
-          nextAliases.set(`${plugin}:${declared}`, [entry.name])
-          nextPaths.set(`${plugin}:${declared}`, path)
-        }
-      }
-    }
-  }
-  aliases = nextAliases
-  skillPaths = nextPaths
-  const usage = await $.session.usage({ breakdown: 'full' }).catch(() => undefined)
-  installedSkills = (usage?.context.breakdown?.skills?.skillFrontmatter ?? []).map(skill => skill.name)
+const fsOf = ($: EngineInterface): GuildFs => ({
+  read: path => $.fs.read(path),
+  list: path => $.fs.list(path),
+  exists: path => $.fs.exists(path),
+})
+
+// Spells a profile names that the skill index says this install can't load.
+function missingSpells(current: Guild): string[] {
+  const made = new Set(current.guildSpells.map(spell => spell.name))
+  const owners = [...current.members.map(member => ({ id: member.id, spells: member.spells })), { id: 'guildmaster', spells: current.guildmaster.spells }]
+  return owners.flatMap(owner => unindexed(owner.spells, current.spellIndex, made).map(spell => `${owner.id}: spell "${spell}" is not installed`))
 }
 
-// Spells a profile names that this install can't load.
-function missingSpells(current: Guild): string[] {
-  if (installedSkills.length === 0) return []
-  const made = new Set(current.guildSpells.map(spell => spell.name))
-  const known = (spell: string) => made.has(spell) || skillPaths.has(spell) || namesOf(spell, aliases).some(name => installedSkills.includes(name))
-  const owners = [...current.members.map(member => ({ id: member.id, spells: member.spells })), { id: 'guildmaster', spells: current.guildmaster.spells }]
-  return owners.flatMap(owner => owner.spells.filter(spell => !known(spell)).map(spell => `${owner.id}: spell "${spell}" is not installed`))
-}
+const installedNames = (current: Guild): string[] | undefined => current.spellIndex?.skills.map(skill => skill.name)
 
 const spellHolders = (current: Guild): Holder[] => [
   ...current.members.map(member => ({ id: member.id, name: `${member.sigil} ${member.name}`, spells: member.spells })),
@@ -208,15 +174,9 @@ const spellHolders = (current: Guild): Holder[] => [
 ]
 
 async function reload($: EngineInterface): Promise<Guild> {
-  const loaded = await loadGuild(
-    {
-      read: path => $.fs.read(path),
-      list: path => $.fs.list(path),
-      exists: path => $.fs.exists(path),
-    },
-    root,
-  )
-  await indexSkills($).catch(() => undefined)
+  const loaded = await loadGuild(fsOf($), root)
+  aliases = aliasesOf(loaded.spellIndex)
+  skillPaths = pathsOf(loaded.spellIndex)
   const errors = [...loaded.errors, ...missingSpells(loaded)]
   for (const member of loaded.members) {
     try {
@@ -258,14 +218,28 @@ async function reload($: EngineInterface): Promise<Guild> {
   return current
 }
 
+// Loads the guild once at a time: callers share the load in flight. A fresh load
+// waits for that one and then reads the folder again, for callers that just wrote it.
+function load($: EngineInterface, isFresh = false): Promise<Guild> {
+  if (loading && !isFresh) return loading
+  const run = (loading ?? Promise.resolve()).catch(() => undefined).then(() => reload($))
+  const clear = () => {
+    if (loading === run) loading = undefined
+  }
+  loading = run
+  run.then(clear, clear)
+  return run
+}
+
 async function ensureGuild($: EngineInterface): Promise<Guild> {
-  return guild ?? reload($)
+  return guild ?? load($)
 }
 
 async function pollForChanges($: EngineInterface): Promise<void> {
+  if (loading) return
   const latest = await computeFingerprint($).catch(() => fingerprint)
   if (latest === fingerprint) return
-  await reload($)
+  await load($, true)
   $.ui.toast('guild: profiles changed, so the roster was recompiled')
 }
 
@@ -415,7 +389,14 @@ async function restoreState($: EngineInterface): Promise<void> {
   await restoreActive($)
   await update($, quest, current => current ?? lastQuest)
   await restoreResults($)
-  await reload($).catch(error => $.ui.toast(`guild: could not load ${root} (${errorText(error)})`))
+  await load($, true).catch(error => $.ui.toast(`guild: could not load ${root} (${errorText(error)})`))
+}
+
+// The session's first load, off the startup path: nothing waits on it.
+async function startGuild($: EngineInterface): Promise<void> {
+  await load($).catch(error => $.ui.toast(`guild: could not load ${root} (${errorText(error)})`))
+  await restoreResults($)
+  void $.ui.open({ id: PANE, title: 'Guild', columns: 56 }).catch(() => undefined)
 }
 
 async function commandOpen($: EngineInterface): Promise<string> {
@@ -424,7 +405,7 @@ async function commandOpen($: EngineInterface): Promise<string> {
 }
 
 async function commandRoster($: EngineInterface): Promise<string> {
-  const current = await reload($)
+  const current = await load($, true)
   const lines = current.members.map(
     member => `${member.sigil} ${member.name} (guild:${member.id}) v${member.version}: ${member.title}`,
   )
@@ -433,7 +414,7 @@ async function commandRoster($: EngineInterface): Promise<string> {
 }
 
 async function commandReload($: EngineInterface): Promise<string> {
-  const current = await reload($)
+  const current = await load($, true)
   const problems = current.errors.length > 0 ? ` Problems: ${current.errors.join('; ')}` : ''
   return `Recompiled ${current.members.length} members, ${current.pacts.length} pacts, ${current.quests.length} quests, ${current.tomes.length} tomes.${problems}`
 }
@@ -513,7 +494,7 @@ async function commandAccept($: EngineInterface, rest: readonly string[]): Promi
   await $.fs.write(changelogPath, changelogWithEntry(changelogRaw, toVersion, date, proposal.changelogLine, proposal.id))
   await $.fs.write(found.path, setFrontmatterScalar(setFrontmatterScalar(found.raw, 'status', 'accepted'), 'decided', date))
   await appendLedger($, { type: 'decision', proposal: proposal.id, target: proposal.target, decision: 'accepted', toVersion })
-  await reload($)
+  await load($, true)
   return `Accepted ${id}: ${proposal.file} is now v${toVersion}, the changelog is updated, and the guild is recompiled.`
 }
 
@@ -625,6 +606,7 @@ async function endQuestFromPanel($: EngineInterface): Promise<void> {
 }
 
 const SUBCOMMANDS = ['open', 'roster', 'reload', 'rate', 'refine', 'proposals', 'accept', 'reject', 'herald', 'spells']
+const NO_INDEX = `There is no skill index yet (spells/${INDEX_FILE}). Run /guild spells index to build it.`
 
 // The text of a member's prepared spells, for the Herald's turn report: it runs
 // as a fork of the main loop, not as a summons, so nothing else preloads them.
@@ -639,24 +621,39 @@ async function preparedText($: EngineInterface, current: Guild, member: Member):
   return parts.join('\n\n')
 }
 
-// /guild spells [member|unclaimed|review]
+// /guild spells index: the intentional skill task. Scans the disk for installed
+// skills and rewrites spells/index.json, the only thing loading reads about them.
+async function commandSpellsIndex($: EngineInterface): Promise<string> {
+  const claudeDir = root.slice(0, root.lastIndexOf('/'))
+  const skills = await scanSkills(fsOf($), claudeDir)
+  const indexedAt = new Date(await $.clock.now()).toISOString()
+  await $.fs.write(join(root, 'spells', INDEX_FILE), indexText({ indexedAt, skills }))
+  const current = await load($, true)
+  const problems = current.errors.filter(error => /spell/.test(error))
+  return `Indexed ${skills.length} installed skills into spells/${INDEX_FILE}.${problems.length > 0 ? `\nProblems:\n${problems.map(problem => `- ${problem}`).join('\n')}` : ''}`
+}
+
+// /guild spells [member|unclaimed|review|index]
 async function commandSpells($: EngineInterface, rest: readonly string[]): Promise<string> {
-  const current = await reload($)
   const [what = ''] = rest.map(word => word.toLowerCase())
+  if (what === 'index') return commandSpellsIndex($)
+  const current = await load($, true)
   const holders = spellHolders(current)
+  const installed = installedNames(current)
   if (what === 'unclaimed') {
-    if (installedSkills.length === 0) return 'The session did not list its skills, so unclaimed skills cannot be worked out right now.'
-    const loose = unclaimed(installedSkills, holders, current.registry, aliases)
+    if (!installed) return NO_INDEX
+    const loose = unclaimed(installed, holders, current.registry, aliases)
     return loose.length === 0
-      ? `Every installed skill (${installedSkills.length}) is held, person-only or retired.`
+      ? `Every indexed skill (${installed.length}) is held, person-only or retired.`
       : `${loose.length} installed skill(s) nobody holds and the registry hasn't ruled on:\n${loose.map(skill => `- ${skill}`).join('\n')}\nRun /guild spells review to have the Artificer propose where they go.`
   }
   if (what === 'review') {
-    const loose = installedSkills.length > 0 ? unclaimed(installedSkills, holders, current.registry, aliases) : []
+    if (!installed) return NO_INDEX
+    const loose = unclaimed(installed, holders, current.registry, aliases)
     const brief = [
       'Member: all members and the guildmaster',
       `Concern: Spellbook review. Compare every installed skill against the spellbooks and the registry (${join(root, 'spells', 'REGISTRY.md')}). Propose: spells to add, move or drop per member (one proposal per member), new guild spells to forge under spells/<name>/SKILL.md (draft them inside a proposal), refinements to existing guild spells, and registry changes (retire, person-only). Use the ledger's \`spells\` and \`spellsBlocked\` fields as evidence of what members reach for.`,
-      `Installed skills (${installedSkills.length}): ${installedSkills.join(', ') || '(listing unavailable; read installed plugins from disk)'}`,
+      `Installed skills (${installed.length}, indexed ${current.spellIndex?.indexedAt || 'at an unknown time'}): ${installed.join(', ') || '(none)'}`,
       `Unclaimed: ${loose.join(', ') || '(none)'}`,
     ].join('\n')
     const spawned = await $.agent.spawn({ prompt: brief, subagentType: 'guild:artificer', description: 'Spellbook review' })
@@ -671,31 +668,68 @@ async function commandSpells($: EngineInterface, rest: readonly string[]): Promi
       `${holder.name}: ${holder.spells.map(spell => (prepared(holder.id).includes(spell) ? `${spell} (prepared)` : spell)).join(', ') || '(none)'}`,
   )
   const problems = current.errors.filter(error => /spell/.test(error))
-  return `${lines.join('\n')}${problems.length > 0 ? `\nProblems:\n${problems.map(problem => `- ${problem}`).join('\n')}` : ''}\nRetired: ${current.registry.retired.length} · person-only: ${current.registry.personOnly.length} · guild spells: ${current.guildSpells.map(spell => spell.name).join(', ') || '(none)'}`
+  const indexed = current.spellIndex ? `${current.spellIndex.skills.length} skills indexed ${current.spellIndex.indexedAt}` : 'no skill index (/guild spells index)'
+  return `${lines.join('\n')}${problems.length > 0 ? `\nProblems:\n${problems.map(problem => `- ${problem}`).join('\n')}` : ''}\nRetired: ${current.registry.retired.length} · person-only: ${current.registry.personOnly.length} · guild spells: ${current.guildSpells.map(spell => spell.name).join(', ') || '(none)'} · ${indexed}`
 }
 
-function commandHerald(rest: readonly string[]): string {
+// /guild herald: a summary now. `last` shows the last one; `on`/`off` sets the
+// report after each turn that did work.
+function commandHerald($: EngineInterface, rest: readonly string[]): string {
   const [mode = ''] = rest.map(word => word.toLowerCase())
   if (mode === 'on' || mode === 'off') {
     isHeraldOn = mode === 'on'
     return `📯 The Herald's turn report is ${mode} for this session.`
   }
-  return lastHerald || '📯 The Herald has not reported yet this session.'
+  if (mode === 'last') return lastHerald || '📯 The Herald has not reported yet this session.'
+  scheduleHerald($, 'asked')
+  return '📯 The Herald is writing a summary. It appears here when it is ready.'
 }
 
-// After a main-loop turn that did work, fork the transcript as the Herald and
-// return its report; undefined when there is nothing to report.
-async function heraldReport($: EngineInterface, answer: string): Promise<string | undefined> {
-  const current = await ensureGuild($).catch(() => undefined)
-  const herald = current ? memberOf(current, 'herald') : undefined
-  if (!herald) return undefined
-  const reply = await $.model.fork({ prompt: heraldPrompt(herald.body, answer, lastHerald, await preparedText($, current!, herald)) })
-  if (!reply.isAnswered) return undefined
+// The Herald writes off the turn's path: the turn ends at once and the report
+// lands in the transcript when the fork answers, however long that takes.
+function scheduleHerald($: EngineInterface, trigger: HeraldTrigger): void {
+  if (isHeraldWriting) {
+    heraldAgain = heraldAgain === 'asked' ? 'asked' : trigger
+    return
+  }
+  isHeraldWriting = true
+  $.clock.after(0, () => void writeHerald($, trigger))
+}
+
+async function writeHerald($: EngineInterface, trigger: HeraldTrigger): Promise<void> {
+  try {
+    const report = await heraldReport($, trigger)
+    if (report) $.ui.log(report)
+  } catch (error) {
+    if (trigger === 'asked') $.ui.log(`📯 The Herald could not write a summary (${errorText(error)}).`)
+  } finally {
+    isHeraldWriting = false
+    const again = heraldAgain
+    heraldAgain = undefined
+    if (again) scheduleHerald($, again)
+  }
+}
+
+// Fork the transcript as the Herald and return its report; undefined when there
+// is nothing to report.
+async function heraldReport($: EngineInterface, trigger: HeraldTrigger): Promise<string | undefined> {
+  const current = await ensureGuild($)
+  const herald = memberOf(current, 'herald')
+  if (!herald) {
+    if (trigger === 'asked') throw new Error('the guild has no herald member')
+    return undefined
+  }
+  const prompt = heraldPrompt(herald.body, lastAnswer, lastHerald, await preparedText($, current, herald), trigger === 'asked')
+  const reply = await $.model.fork({ prompt })
+  if (!reply.isAnswered) {
+    if (trigger === 'asked') throw new Error(reply.reason)
+    return undefined
+  }
   const report = cleanReport(reply.text)
   if (!report) return undefined
   lastHerald = report
   const asks = askCount(report)
-  await $.ui.status(asks > 0 ? `📯 ${asks} need${asks === 1 ? 's' : ''} you` : undefined)
+  $.ui.status(asks > 0 ? `📯 ${asks} need${asks === 1 ? 's' : ''} you` : undefined)
   return report
 }
 
@@ -718,7 +752,7 @@ async function runSubcommand($: EngineInterface, sub: string, rest: readonly str
     case 'reject':
       return commandReject($, rest)
     case 'herald':
-      return commandHerald(rest)
+      return commandHerald($, rest)
     case 'spells':
       return commandSpells($, rest)
     default:
@@ -736,10 +770,8 @@ export const register: Register = (on, options) => {
     await $.command.register({
       name: 'guild',
       description: 'Open the Guild panel, or manage it: roster, reload, rate, refine, proposals, accept, reject, herald, spells',
-      argumentHint: '[roster|reload|rate|refine|proposals|accept|reject|herald [on|off]|spells [member|unclaimed|review]]',
+      argumentHint: '[roster|reload|rate|refine|proposals|accept|reject|herald [last|on|off]|spells [member|unclaimed|review|index]]',
     })
-    await reload($).catch(error => $.ui.toast(`guild: could not load ${root} (${errorText(error)})`))
-    await restoreResults($)
     // A module reload empties the module's maps but keeps $.state: refill them.
     for (const one of await read($, active)) if (!inFlight.has(one.agentId)) inFlight.set(one.agentId, one)
     lastQuest ??= await read($, quest)
@@ -771,19 +803,21 @@ export const register: Register = (on, options) => {
         required: ['action'],
       },
     })
-    void $.ui.open({ id: PANE, title: 'Guild', columns: 56 }).catch(() => undefined)
+    // The startup the engine awaits ends here; the guild loads after it.
+    $.clock.after(0, () => void startGuild($))
     return next(e)
   })
 
-  // Startup and compaction keep $.state, so only the three resets reload.
+  // Startup and compaction keep $.state, so only the three resets reload, after the reset.
   on('classic.SessionStart', { source: ['clear', 'resume', 'fork'] }, async ($, e, next) => {
-    await restoreState($)
+    $.clock.after(0, () => void restoreState($).catch(error => $.ui.toast(`guild: could not restore (${errorText(error)})`)))
     return next(e)
-  })
+  }).catch(($, e, next) => next(e))
 
+  // The hooks below read the guild as loaded so far and never wait for a load.
   on('prompt.compose', async ($, e, next) => {
     const composed = await next(e)
-    const current = await ensureGuild($).catch(() => undefined)
+    const current = guild
     if (!current || current.members.length === 0) return composed
     return {
       ...composed,
@@ -793,14 +827,14 @@ export const register: Register = (on, options) => {
 
   on('agent.offer', async ($, e, next) => {
     if (!e.agent.startsWith('guild:')) return next(e)
-    const current = await ensureGuild($).catch(() => undefined)
-    const isMember = current?.members.some(member => agentType(member) === e.agent) ?? true
+    const isMember = guild?.members.some(member => agentType(member) === e.agent) ?? true
     return isMember ? next(e) : { isOffered: false }
-  })
+  }).catch(($, e, next) => (next.called || !e.agent.startsWith('guild:') ? next(e) : { isOffered: false }))
 
   on('agent.spawn', async ($, e, next) => {
     if (!e.subagentType.startsWith('guild:')) return next(e)
-    const current = await ensureGuild($)
+    const current = guild
+    if (!current) return { deny: 'The guild is still loading. Summon again in a moment.' }
     const id = e.subagentType.slice('guild:'.length)
     const member = memberOf(current, id)
     if (!member) return { deny: `There is no guild member "${id}". Members: ${current.members.map(one => one.id).join(', ')}.` }
@@ -815,7 +849,9 @@ export const register: Register = (on, options) => {
       await trackSummons($, { agentId: spawned.agentId, member: id, description: e.description, tome: briefTome(e.prompt) })
     }
     return spawned
-  })
+  }).catch(($, e, next) =>
+    next.called || !e.subagentType.startsWith('guild:') ? next(e) : { deny: 'The guild could not check this summons, so it was not started.' },
+  )
 
   on('turn.start', async ($, e, next) => {
     mainToolCalls = 0
@@ -829,9 +865,10 @@ export const register: Register = (on, options) => {
       await update($, isThinking, () => false)
       const didWork = mainToolCalls > 0
       mainToolCalls = 0
-      if (!isHeraldOn || !didWork || e.reason !== 'answer') return result
-      const report = await heraldReport($, e.answer).catch(() => undefined)
-      return report ? { ...result, text: report } : result
+      lastAnswer = e.answer
+      // Work completed: the Herald reports after the turn, never holding it.
+      if (isHeraldOn && didWork && e.reason === 'answer') scheduleHerald($, 'turn')
+      return result
     }
     const agentId = e.agentId
     const summons = inFlight.get(agentId) ?? (await read($, active)).find(one => one.agentId === agentId)
@@ -857,7 +894,9 @@ export const register: Register = (on, options) => {
     if (id === undefined) return next(e)
     await recordActivity($, agentId, toolSummary(String(e.tool), e)).catch(() => undefined)
     if (e.tool === 'Skill') {
-      const current = await ensureGuild($)
+      const current = guild
+      // Not loaded: the .catch below blocks the skill rather than let it through unchecked.
+      if (!current) throw new Error('the guild is not loaded')
       const caster = memberOf(current, id)
       const skill = String(e.skill)
       if (caster && !holds(caster.spells, skill, aliases)) {

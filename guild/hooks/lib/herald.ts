@@ -3,14 +3,16 @@
 
 const REPORT_LIMIT = 4000
 
-export function heraldPrompt(profileBody: string, answer: string, previous: string, prepared = ''): string {
+export function heraldPrompt(profileBody: string, answer: string, previous: string, prepared = '', isAsked = false): string {
   return [
-    'The turn above has ended. You are now The Herald of the guild, and you write the turn report described below. Write the report alone: no preamble, no tool calls, no code fences around it.',
+    isAsked
+      ? 'The person has asked for a summary of the work so far. You are now The Herald of the guild, and you write the report described below, covering the work done since your previous report. Write the report alone: no preamble, no tool calls, no code fences around it.'
+      : 'The turn above has ended. You are now The Herald of the guild, and you write the turn report described below. Write the report alone: no preamble, no tool calls, no code fences around it.',
     '',
     profileBody.trim(),
     ...(prepared.trim() ? ['', '## Your prepared spells (follow them in the report; your report format above still governs its structure)', prepared.trim()] : []),
     '',
-    '## The final answer of this turn (the person sees it above your report)',
+    '## The last answer of the main thread (the person sees it above your report)',
     answer.trim() || '(no visible answer)',
     '',
     '## Your previous report (carry forward every ask still unanswered)',

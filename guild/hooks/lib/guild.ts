@@ -5,6 +5,8 @@ import type { FsEntry } from 'claude-code'
 
 import { asList, asText, splitFrontmatter } from './frontmatter'
 import type { Pact } from './scroll'
+import type { SkillIndex } from './skillindex'
+import { INDEX_FILE, parseIndex } from './skillindex'
 import { parsePacts } from './scroll'
 import type { Registry } from './spells'
 import { parseRegistry, skillBody, spellProblems } from './spells'
@@ -68,6 +70,8 @@ export type Guild = {
   tomes: Tome[]
   registry: Registry
   guildSpells: GuildSpell[]
+  // spells/index.json, written by /guild spells index; undefined until it exists.
+  spellIndex?: SkillIndex
   errors: string[]
 }
 
@@ -229,6 +233,15 @@ export async function loadGuild(fs: GuildFs, root: string): Promise<Guild> {
     const raw = await readIf(path)
     if (raw !== undefined) guildSpells.push({ name: dir, path, body: skillBody(raw) })
   }
+  const indexRaw = await readIf(join(root, 'spells', INDEX_FILE))
+  let spellIndex: SkillIndex | undefined
+  if (indexRaw !== undefined) {
+    try {
+      spellIndex = parseIndex(indexRaw)
+    } catch (error) {
+      errors.push(`spells/${INDEX_FILE}: ${error instanceof Error ? error.message : String(error)}; run /guild spells index`)
+    }
+  }
   for (const member of members) errors.push(...spellProblems(member, registry))
   errors.push(...spellProblems({ id: 'guildmaster', spells: guildmaster.spells, prepared: [] }, registry))
 
@@ -253,6 +266,7 @@ export async function loadGuild(fs: GuildFs, root: string): Promise<Guild> {
     tomes,
     registry,
     guildSpells,
+    spellIndex,
     errors,
   }
 }
