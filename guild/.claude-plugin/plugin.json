@@ -1,0 +1,26 @@
+{
+  "name": "guild",
+  "version": "0.1.0",
+  "description": "A hand-curated team of fantasy-archetype subagents with pacts (SLAs), an orchestrating Guildmaster, a ledger, and an Artificer that refines them by proposal.",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "guildPath": {
+      "type": "string",
+      "title": "Guild folder",
+      "description": "Absolute path of the guild's data folder (charter, pacts, members, tomes, ledger, proposals).",
+      "default": "C:/Users/Joseph/.claude/guild"
+    },
+    "strictBriefs": {
+      "type": "boolean",
+      "title": "Strict briefs",
+      "description": "Refuse a summons whose brief lacks a field the member accepts as required.",
+      "default": true
+    },
+    "heraldReport": {
+      "type": "boolean",
+      "title": "Herald turn report",
+      "description": "After every turn that did work, append the Herald's report: what was done and every decision or input that needs you.",
+      "default": true
+    }
+  }
+}
